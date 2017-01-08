@@ -31,6 +31,7 @@ import java.util.ArrayList;
 
 public class ReadWrite {
 
+	//TODO add a method for serialization
 	
 	public static ArrayList<String> readFile(String strFile){
 		

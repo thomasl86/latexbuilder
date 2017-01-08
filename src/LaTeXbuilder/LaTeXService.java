@@ -39,7 +39,6 @@ public class LaTeXService extends Thread implements Runnable {
 	
 	private String mStrCode;
 	private String mStrFileOut;
-	private boolean mBoBuildSuccess 		= false;
 	private boolean mBoEmbed 				= false;
 	private static int mWaitBuild 			= 10;
 	private static String mStrDir			= "latex/";
@@ -86,36 +85,14 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrImgmgckParams = params;
 	}
 	
-	public boolean buildLaTeX(String strCode, String strFilename, boolean boEmbed){
-		boolean boSuccess = false;
+	public void buildLaTeX(String strCode, String strFilename, boolean boEmbed){
 		
 		mBoEmbed = boEmbed;
 		mStrCode = strCode;
 		mStrFileOut = strFilename;
 		
 		this.start();
-
 		Printing.info("Building...", 0);
-		while (this.isAlive());
-		if (mBoBuildSuccess) 
-			Printing.info("Success!", 0);
-		else 
-			Printing.info("Failed.", 0);
-		/*
-		long dtWait = 20000;
-		long dt = 0;
-		long tStart = System.currentTimeMillis();
-		while (this.isAlive() && (dt < dtWait)){
-			dt = System.currentTimeMillis() - tStart;
-		}
-		if (!this.isAlive()){
-			boSuccess = true;
-		}
-		else{
-			//TODO implement something that stops run() when build not successful
-		}
-		*/
-		return mBoBuildSuccess;
 	}
 	
 	public String readLaTeXCodeFromFile(String strFilename) throws IOException{
@@ -123,7 +100,6 @@ public class LaTeXService extends Thread implements Runnable {
 		String strChunks = null;
 
 		strChunks = PNGTweaker.readTextChunks(strFilename);
-		//TODO filter out latex code (find tag)
 		Scanner sc = new Scanner(strChunks);
 		try{
 		sc.useDelimiter(STR_DELIMITER);
@@ -142,7 +118,6 @@ public class LaTeXService extends Thread implements Runnable {
 	public void run() {
 		
 		String mStrCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
-		//System.out.println(mStrCodeInsert);
 
 		// --- Load contents of latex preamble file
 		ArrayList<String> standaloneLines = 
@@ -169,10 +144,10 @@ public class LaTeXService extends Thread implements Runnable {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
 			if (!proc.waitFor(mWaitBuild, TimeUnit.SECONDS)){
 				Printing.error("Waiting time of " + mWaitBuild +" seconds expired before building finished. Read log for more info.");
-				mBoBuildSuccess = false;
+				Printing.info("Failed.", 0);
 			}
 			else {
-				mBoBuildSuccess = true;
+				Printing.info("Success!", 0);
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -215,21 +190,26 @@ public class LaTeXService extends Thread implements Runnable {
 	        chunks.add(authorChunk);
 	        chunks.add(softwareChunk);
 	        chunks.add(codeChunk);
-	
+ 
 	        FileInputStream fi;
 	        FileOutputStream fo;
 			try {
 				fi = new FileInputStream(mStrFileOut);
-				fo = new FileOutputStream(mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png");
+				String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png";
+				fo = new FileOutputStream(strFileOutTmp);
 				
 				PNGTweaker.insertChunks(chunks, fi, fo);
 	
 		        fi.close();
 		        fo.close();
+		        
+		        File fileOutTemp = new File(strFileOutTmp);
+		        File fileOut = new File(mStrFileOut);
+		        fileOut.delete();
+		        fileOutTemp.renameTo(new File(mStrFileOut));
 	
 			} catch (FileNotFoundException e) {
 				Printing.error(mStrFileOut+" could not be found.");
-				mBoBuildSuccess = false;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

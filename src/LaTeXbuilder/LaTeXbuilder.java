@@ -42,6 +42,8 @@ public class LaTeXbuilder {
 	private static String mStrDirApp 	 = null;
 	private static boolean mIsDebug 	 = false;
 	private static boolean mDoEmbedCode	 = false;
+	static Wini mConfig 		 		 = null;
+	static Wini mConfigStore 		 	 = null;
 
 	
 	/* Methods */
@@ -52,7 +54,7 @@ public class LaTeXbuilder {
 		mIsDebug = ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0;
 		
-		//Path to the current working directory
+		// Path to the current working directory
 		mStrDirWorking = System.getProperty("user.dir");
 		//Path to the executable
 		if (mIsDebug)
@@ -61,9 +63,9 @@ public class LaTeXbuilder {
 			mStrDirApp = getPath(LaTeXbuilder.class);
 		
 		/* 
-		 * Parse commandline options array
+		 * Parse command line options array
 		 */
-		// Setup commandline parser
+		// Setup command line parser
 		OptionParser parser = new OptionParser();
 		parser.acceptsAll(asList("r","read"), "Read code embedded in PNG file.")
 				.withRequiredArg();
@@ -72,11 +74,11 @@ public class LaTeXbuilder {
 				"Build latex code. [/dir/source.tex]")
 				.withRequiredArg();
 		parser.acceptsAll(asList("o", "output"), "Output file [/dir/file.ext]").withRequiredArg();
-		parser.acceptsAll( asList("v", "verbose"), "Be more chatty." );
-		parser.acceptsAll( asList("?", "h", "help"), "Show help and exit." );
+		parser.acceptsAll(asList("v", "verbose"), "Be more chatty." );
+		parser.acceptsAll(asList("?", "h", "help"), "Show help and exit." );
 		parser.acceptsAll(asList("e", "embed"), "Embed the latex source code in output file.");
 		
-		// Parse arguments and conditionally execute code
+		// --- Parse command line arguments
 		OptionSet optionSet = parser.parse( args );
 		boolean hasCmdArgs = optionSet.hasOptions();
 		boolean doReadFile = false;
@@ -112,29 +114,37 @@ public class LaTeXbuilder {
 			}
 		}
 		
-		/*
-		 *  Parse the config file
-		 */
+		// --- Parse the config file
 		LaTeXService laTeXService = new LaTeXService();
 		
-		if(doReadConfig){
-			Wini config = null;
-			
+		if(doReadConfig){			
 			try {
-				config = new Wini(new File(mStrDirApp+"/config.ini"));
+				mConfig = new Wini(new File(mStrDirApp+"/config.ini"));
 				Printing.info("Config file reading successful.", 0);
 			} catch (IOException e1) {
 				Printing.error("Could not read config file (IOException).");
 				Printing.info("Using standard parameters.", 0);
 				Printing.info("Path: "+mStrDirApp, 0);
 			}
-			if (config != null){
-				int waitBuild = config.get("build", "wait", int.class);
-				mStrDirLaTeX = config.get("build", "latexDir", String.class);
-				String strFile = config.get("build", "latexPreFile", String.class);
-				int intPngQuality = config.get("imagemagick", "quality", int.class);
-				int intPngDensity = config.get("imagemagick", "density", int.class);
-				String strImgmgckParams = config.get("imagemagick", "params", String.class);
+			File fileCfgStore = new File(mStrDirApp+"/config_store.inf");
+			try {
+				fileCfgStore.createNewFile();
+				mConfigStore = new Wini(fileCfgStore);
+			} catch (IOException e) {
+				Printing.error("Could not create file 'config_store.inf' (IOException).");
+				e.printStackTrace();
+			}
+			if (mConfigStore != null) {
+				String temp = mConfigStore.get("build", "workingdir", String.class);
+				if (temp != null) GUI.setWorkingDir(temp);
+			}
+			if (mConfig != null){
+				int waitBuild = mConfig.get("build", "wait", int.class);
+				mStrDirLaTeX = mConfig.get("build", "latexDir", String.class);
+				String strFile = mConfig.get("build", "latexPreFile", String.class);
+				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
+				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
+				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
 	
 				laTeXService.setWaitBuild(waitBuild);
 				laTeXService.setDir(mStrDirApp+"/"+mStrDirLaTeX);
@@ -157,7 +167,7 @@ public class LaTeXbuilder {
 					String strCode;
 					try {
 						strCode = ReadWrite.readFile(mStrDirWorking+"/"+mStrFileCode, Charset.defaultCharset());
-						boolean boSuccess = laTeXService.buildLaTeX(
+						laTeXService.buildLaTeX(
 								strCode, mStrDirWorking+"/"+mStrFileOut, mDoEmbedCode);
 						//if(boSuccess) Printing.info("Build successful.", 0);
 						//else Printing.info("Build failed.", 0);
@@ -185,9 +195,7 @@ public class LaTeXbuilder {
 		}
 	}
 	
-	private static String getPath(Class cls) {
-	    String cn = cls.getName();
-	    String rn = cn.replace('.', '/') + ".jar";
+	private static String getPath(Class<LaTeXbuilder> cls) {
 	    String path = cls.getProtectionDomain().getCodeSource().getLocation().getPath();
 	    int ix = path.indexOf("LaTeXbuilder.jar");
 	    if(ix >= 0) {
@@ -195,5 +203,16 @@ public class LaTeXbuilder {
 	    } else {
 	        return path;
 	    }
+	}
+	
+	public static void putConfigArg(String section, String option, Object value){
+		if (mConfigStore != null){
+			mConfigStore.put(section, option, value);
+			try {
+				mConfigStore.store();
+			} catch (IOException e) {
+				Printing.error("Could not write to config file (IOException)");
+			}
+		}
 	}
 }

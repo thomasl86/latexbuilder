@@ -56,3 +56,7 @@ local.properties
 *.pdf
 standalone.tex
 code.tex
+config_store.inf
+miglayout*
+LaTeXbuilder.xml
+LaTeXbuilder_build.sh

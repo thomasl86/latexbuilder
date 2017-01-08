@@ -31,10 +31,9 @@ public class Printing {
 	
 	public static void error(String msg)
    	{
-		String stMessage = "ERROR: " + msg;
-		//TODO implement method 'print() in the GUI class 
-		//ServerGUI.print(stMessage);
-		System.out.println(stMessage);
+		String strMessage = "ERROR: " + msg;
+		System.out.println(strMessage);
+		GUI.printToLog(strMessage);
    	}
 	
 
@@ -47,16 +46,18 @@ public class Printing {
 	*/
 	public static void info(String msg, int verbosity)
 	{
-		String stMessage = "INFO: " + msg;
+		String strMessage = "INFO: " + msg;
 		if ((verbosity > 0) && mBoVerbose){
 			//TODO call 'print() in GUI class
 			//ServerGUI.print(stMessage);
-			System.out.println(stMessage);
+			System.out.println(strMessage);
+			GUI.printToLog(strMessage);
 		}
 		else if(verbosity == 0){
 			//TODO call 'print() in GUI class
 			//ServerGUI.print(stMessage);
-			System.out.println(stMessage);
+			System.out.println(strMessage);
+			GUI.printToLog(strMessage);
 		}
 	}
 	
