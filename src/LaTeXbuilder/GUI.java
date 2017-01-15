@@ -80,7 +80,7 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 		mTxtCode.setEditable(true);
 		mTxtCode.setVisible(true);
 		mTxtCode.setBounds(0, 0, 250, 100);
-		mLabelWrite = new JLabel("Save to (dir/file.ext):");
+		mLabelWrite = new JLabel("Save to (dir"+File.separator+"file.ext):");
 		
 		mTxtFileWrite = new JTextField(25);
 		mTxtFileWrite.setEditable(true);

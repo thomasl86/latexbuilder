@@ -35,7 +35,7 @@ public class LaTeXbuilder {
 	/* Members */
 	
 	private static String mStrFileCode 	 = "code.tex";
-	private static String mStrDirLaTeX 	 = "../latex/";
+	private static String mStrDirLaTeX 	 = ".."+File.separator+"latex";
 	private static String mStrFileOut	 = "out.png";
 	private static String mStrFileRead 	 = null;
 	private static String mStrDirWorking = null;
@@ -71,9 +71,9 @@ public class LaTeXbuilder {
 				.withRequiredArg();
 		parser.acceptsAll(
 				asList("b", "build"), 
-				"Build latex code. [/dir/source.tex]")
+				"Build latex code. ["+File.separator+"dir"+File.separator+"source.tex]")
 				.withRequiredArg();
-		parser.acceptsAll(asList("o", "output"), "Output file [/dir/file.ext]").withRequiredArg();
+		parser.acceptsAll(asList("o", "output"), "Output file ["+File.separator+"dir"+File.separator+"file.ext]").withRequiredArg();
 		parser.acceptsAll(asList("v", "verbose"), "Be more chatty." );
 		parser.acceptsAll(asList("?", "h", "help"), "Show help and exit." );
 		parser.acceptsAll(asList("e", "embed"), "Embed the latex source code in output file.");
@@ -119,14 +119,14 @@ public class LaTeXbuilder {
 		
 		if(doReadConfig){			
 			try {
-				mConfig = new Wini(new File(mStrDirApp+"/config.ini"));
+				mConfig = new Wini(new File(mStrDirApp+File.separator+"config.ini"));
 				Printing.info("Config file reading successful.", 0);
 			} catch (IOException e1) {
 				Printing.error("Could not read config file (IOException).");
 				Printing.info("Using standard parameters.", 0);
 				Printing.info("Path: "+mStrDirApp, 0);
 			}
-			File fileCfgStore = new File(mStrDirApp+"/config_store.inf");
+			File fileCfgStore = new File(mStrDirApp+File.separator+"config_store.inf");
 			try {
 				fileCfgStore.createNewFile();
 				mConfigStore = new Wini(fileCfgStore);
@@ -172,7 +172,7 @@ public class LaTeXbuilder {
 						//if(boSuccess) Printing.info("Build successful.", 0);
 						//else Printing.info("Build failed.", 0);
 					} catch (IOException e) {
-						Printing.error("Could not read file "+mStrDirWorking+"/"+mStrFileCode+" (IOException)");
+						Printing.error("Could not read file "+mStrDirWorking+File.separator+mStrFileCode+" (IOException)");
 						Printing.info("Path: "+mStrDirWorking, 0);
 					}
 				}

@@ -41,7 +41,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private String mStrFileOut;
 	private boolean mBoEmbed 				= false;
 	private static int mWaitBuild 			= 10;
-	private static String mStrDir			= "latex/";
+	private static String mStrDir			= "latex";
 	private static String mStrFilePream 	= "standalone_pre";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
@@ -121,22 +121,22 @@ public class LaTeXService extends Thread implements Runnable {
 
 		// --- Load contents of latex preamble file
 		ArrayList<String> standaloneLines = 
-				ReadWrite.readFile(mStrDir + mStrFilePream + ".tex");
+				ReadWrite.readFile(mStrDir + File.separator + mStrFilePream + ".tex");
 		standaloneLines.add(mStrCode);
 		standaloneLines.add("\\end{document}");
 		
 		// --- Write assembled contents to ascii file
-		ReadWrite.writeFile(standaloneLines, mStrDir + "standalone.tex");
+		ReadWrite.writeFile(standaloneLines, mStrDir + File.separator + "standalone.tex");
 		
 		// --- Concatenate code to provide to class Runtime
 		String[] cmdarray = new String[2];
 		cmdarray[0] =  
 				"pdflatex -output-directory " + mStrDir
-				+ " " + mStrDir + "standalone.tex";
+				+ " " + mStrDir + File.separator + "standalone.tex";
 		cmdarray[1] = 
 				"convert " + mStrImgmgckParams
 				+ " -density " + mPngDensity + " -quality " + mPngQuality
-				+ " "+mStrDir+"standalone.pdf "+mStrFileOut;
+				+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
 		Printing.info(cmdarray[1], 1);
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
@@ -170,7 +170,7 @@ public class LaTeXService extends Thread implements Runnable {
 			}
 		} else if(strExtension.equals("pdf")) {
 			// --- Just rename standalone.pdf to desired filename and move to new location
-			File fileStandalone = new File(mStrDir+"standalone.pdf");
+			File fileStandalone = new File(mStrDir+File.separator+"standalone.pdf");
 			fileStandalone.renameTo(new File(mStrFileOut));
 		} else {
 			Printing.error("Extension "+strExtension+" unknown.");
@@ -179,7 +179,7 @@ public class LaTeXService extends Thread implements Runnable {
 		if(mBoEmbed){
 			// --- Construct the latex code to include in the PNG image"Code"
 	        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
-	        		.keyword("Author").text("LaTeXbuilder");
+	        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
 	        Chunk authorChunk = builder.build();
 	        builder.keyword("Software").text("LaTeXbuilder");
 	        Chunk softwareChunk = builder.build();
