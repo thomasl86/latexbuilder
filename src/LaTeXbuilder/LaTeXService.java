@@ -137,6 +137,7 @@ public class LaTeXService extends Thread implements Runnable {
 				"convert " + mStrImgmgckParams
 				+ " -density " + mPngDensity + " -quality " + mPngQuality
 				+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
+		Printing.info(cmdarray[0], 1);
 		Printing.info(cmdarray[1], 1);
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
@@ -144,10 +145,15 @@ public class LaTeXService extends Thread implements Runnable {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
 			if (!proc.waitFor(mWaitBuild, TimeUnit.SECONDS)){
 				Printing.error("Waiting time of " + mWaitBuild +" seconds expired before building finished. Read log for more info.");
-				Printing.info("Failed.", 0);
+				Printing.info("Build failed.", 0);
 			}
 			else {
-				Printing.info("Success!", 0);
+				int result = proc.exitValue();
+				if (result != 0)
+					Printing.info("Build failed. Return value: "+result+".", 0);
+				else{
+					Printing.info("Success!", 0);
+				}
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -161,7 +167,10 @@ public class LaTeXService extends Thread implements Runnable {
 			try {
 				proc = Runtime.getRuntime().exec(cmdarray[1]);
 				int result = proc.waitFor();
-				Printing.info("Conversion returned "+result+".", 1);
+				if (result != 0)
+					Printing.error("Conversion to PNG failed. ImageMagick returned "+result+".");
+				else
+					Printing.info("Conversion to PNG successful.", 0);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

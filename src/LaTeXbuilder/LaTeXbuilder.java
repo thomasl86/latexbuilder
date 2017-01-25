@@ -147,7 +147,7 @@ public class LaTeXbuilder {
 				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
 	
 				laTeXService.setWaitBuild(waitBuild);
-				laTeXService.setDir(mStrDirApp+"/"+mStrDirLaTeX);
+				laTeXService.setDir(mStrDirApp+File.separator+mStrDirLaTeX);
 				laTeXService.setPreambleFile(strFile);
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckParams);
 			}
@@ -166,9 +166,9 @@ public class LaTeXbuilder {
 					// --- Get contents from code.tex
 					String strCode;
 					try {
-						strCode = ReadWrite.readFile(mStrDirWorking+"/"+mStrFileCode, Charset.defaultCharset());
+						strCode = ReadWrite.readFile(mStrDirWorking+File.separator+mStrFileCode, Charset.defaultCharset());
 						laTeXService.buildLaTeX(
-								strCode, mStrDirWorking+"/"+mStrFileOut, mDoEmbedCode);
+								strCode, mStrDirWorking+File.separator+mStrFileOut, mDoEmbedCode);
 						//if(boSuccess) Printing.info("Build successful.", 0);
 						//else Printing.info("Build failed.", 0);
 					} catch (IOException e) {
