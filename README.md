@@ -2,24 +2,27 @@
 
 LaTeXbuilder facilitates the compilation of latex source code into PDF or PNG file format e.g. for the creation of a PNG image file of a math formula.
 It can
-- build a PDF or PNG from given LaTeX source code, e.g. a simple formua such as `$\sum P = 0$`
+- build a PDF or PNG from given LaTeX source code, e.g. a simple formula such as `$e^{i\pi} + 1 = 0$`
 - embed the source code in the PNG file for future modifying of the contents
 - build figures created with tikzpicture and/or pgfplots
 
-A commandline interface and rudimentary GUI are available.
+A command line interface and rudimentary GUI are available.
 
-The program has so far only been tested with Ubuntu 14.04 and TeX Live.
+The program has been tested with *Ubuntu 14.04* and *TeX Live*, and *Windows 7* and *MiKTeX*.
+
+**Libraries used:**
+
+- [icafe](https://github.com/dragon66/icafe), a Java library for reading, writing, converting, and manipulating images and meta data. The library is used to embed the LaTeX source code within the built PNG file and to extract the embedded code in PNGs
+- [JOpt Simple](https://pholser.github.io/jopt-simple/), a command line option parsing library
+- [ini4j](http://ini4j.sourceforge.net/), a Java API for parsing configuration files written in the .ini file format
 
 # Requirements
 
-For the program to work, the following needs to be pre-installed:
+For the program to work, the following is necessary:
 - A latex distribution that contains a *pdflatex* implementation (e.g. MiKTeX or TeX Live)
 - ImageMagick for the conversion from PDF to PNG
-
-The program uses the following libraries:
-- [icafe](https://github.com/dragon66/icafe), a Java library for reading, writing, converting, and manipulating images and metadata. The library is used to embed the LaTeX source code within the built PNG file and to extract the embedded code in PNGs
-- [JOpt Simple](https://pholser.github.io/jopt-simple/), a command line option parsing library
-- [ini4j](http://ini4j.sourceforge.net/), a Java API for parsing configuration files written in the .ini file format
+- *Win 7 users*: The path to `convert.exe` provided by ImageMagick must be given in `config.ini` (e.g. `
+path = C:\Program Files (x86)\ImageMagick-6.9.0-Q16\`) under section `imagemagick`
 
 # Example
 
