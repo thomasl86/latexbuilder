@@ -12,7 +12,7 @@
 * GNU General Public License for more details.
 * 
 * You should have received a copy of the GNU General Public License
-* along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+* along with LaTeXbuilder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package LaTeXbuilder;
@@ -24,7 +24,9 @@ import static java.util.Arrays.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 
 import org.ini4j.Wini;
@@ -54,14 +56,6 @@ public class LaTeXbuilder {
 		mIsDebug = ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0;
 		
-		// Path to the current working directory
-		mStrDirWorking = System.getProperty("user.dir");
-		//Path to the executable
-		if (mIsDebug)
-			mStrDirApp = mStrDirWorking;
-		else
-			mStrDirApp = getPath(LaTeXbuilder.class);
-		
 		/* 
 		 * Parse command line options array
 		 */
@@ -75,6 +69,7 @@ public class LaTeXbuilder {
 				.withRequiredArg();
 		parser.acceptsAll(asList("o", "output"), "Output file ["+File.separator+"dir"+File.separator+"file.ext]").withRequiredArg();
 		parser.acceptsAll(asList("v", "verbose"), "Be more chatty." );
+		parser.acceptsAll(asList("d", "debug"), "Enable printing of debug information." );
 		parser.acceptsAll(asList("?", "h", "help"), "Show help and exit." );
 		parser.acceptsAll(asList("e", "embed"), "Embed the latex source code in output file.");
 		
@@ -88,6 +83,8 @@ public class LaTeXbuilder {
 		if (hasCmdArgs){
 			if (optionSet.has("v") || optionSet.has("verbose"))
 				Printing.setVerbosity(true);
+			if (optionSet.has("d") || optionSet.has("debug"))
+				Printing.setDebug(true);
 			if (optionSet.has("r") || optionSet.has("read")){
 				doReadFile = true;				
 				//TODO debug the below
@@ -114,13 +111,25 @@ public class LaTeXbuilder {
 			}
 		}
 		
+		// --- Path to the current working directory
+		mStrDirWorking = System.getProperty("user.dir");
+		//Path to the executable
+		if (mIsDebug){
+			mStrDirApp = mStrDirWorking;
+		} else {
+			mStrDirApp = getPath(LaTeXbuilder.class);
+		}
+		Printing.debug("App dir: "+mStrDirApp);
+		Printing.debug("Working dir: "+mStrDirWorking);
+		Printing.debug("Operating system: "+OsDetection.getOsString());
+		
 		// --- Parse the config file
 		LaTeXService laTeXService = new LaTeXService();
 		
 		if(doReadConfig){			
 			try {
 				mConfig = new Wini(new File(mStrDirApp+File.separator+"config.ini"));
-				Printing.info("Config file reading successful.", 0);
+				Printing.info("Config file reading successful.", 1);
 			} catch (IOException e1) {
 				Printing.error("Could not read config file (IOException).");
 				Printing.info("Using standard parameters.", 0);
@@ -145,11 +154,15 @@ public class LaTeXbuilder {
 				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
 				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
 				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
+				String strImgmgckPath = null;
+				if(OsDetection.getOS() == OsDetection.OS_WIN){
+					strImgmgckPath = mConfig.get("imagemagick", "path", String.class);
+				}
+				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
 				laTeXService.setWaitBuild(waitBuild);
 				laTeXService.setDir(mStrDirApp+File.separator+mStrDirLaTeX);
 				laTeXService.setPreambleFile(strFile);
-				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckParams);
 			}
 		}		
 
@@ -169,11 +182,8 @@ public class LaTeXbuilder {
 						strCode = ReadWrite.readFile(mStrDirWorking+File.separator+mStrFileCode, Charset.defaultCharset());
 						laTeXService.buildLaTeX(
 								strCode, mStrDirWorking+File.separator+mStrFileOut, mDoEmbedCode);
-						//if(boSuccess) Printing.info("Build successful.", 0);
-						//else Printing.info("Build failed.", 0);
 					} catch (IOException e) {
 						Printing.error("Could not read file "+mStrDirWorking+File.separator+mStrFileCode+" (IOException)");
-						Printing.info("Path: "+mStrDirWorking, 0);
 					}
 				}
 				
@@ -196,13 +206,24 @@ public class LaTeXbuilder {
 	}
 	
 	private static String getPath(Class<LaTeXbuilder> cls) {
-	    String path = cls.getProtectionDomain().getCodeSource().getLocation().getPath();
-	    int ix = path.indexOf("LaTeXbuilder.jar");
-	    if(ix >= 0) {
-	        return path.substring(0, ix);
-	    } else {
-	        return path;
-	    }
+	    String path = null;
+		try {
+			path = cls.getProtectionDomain().getCodeSource().getLocation().getPath();
+			path = URLDecoder.decode(path, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Printing.error("Exception in getPath(): UnsupportedEncodingException");
+		}
+		if(path != null){
+		    int ix = path.indexOf("LaTeXbuilder.jar");
+		    if(ix >= 0) {
+		    	path = path.substring(0, ix);
+		    }
+			path = new File(path).getAbsolutePath();
+			if (OsDetection.getOS() == OsDetection.OS_WIN){
+				path = path.substring(0, path.length()-2);
+			}
+		}
+		return path;
 	}
 	
 	public static void putConfigArg(String section, String option, Object value){

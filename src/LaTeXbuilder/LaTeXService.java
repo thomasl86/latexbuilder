@@ -12,16 +12,18 @@
 * GNU General Public License for more details.
 * 
 * You should have received a copy of the GNU General Public License
-* along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+* along with LaTeXbuilder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package LaTeXbuilder;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -45,6 +47,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private static String mStrFilePream 	= "standalone_pre";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
+	private static String mStrImgmgckPath   = " ";
 	private static String mStrImgmgckParams	= " ";
 	private static final String STR_CODE_KEYWORD 	= "Code";
 	private static final String STR_DELIMITER 		= "latex_delim";
@@ -79,9 +82,10 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrFilePream = strFile;
 	}
 	
-	public void setImagemagickParams(int intDensity, int intQuality, String params){
+	public void setImagemagickParams(int intDensity, int intQuality, String path, String params){
 		mPngDensity = intDensity;
 		mPngQuality = intQuality;
+		mStrImgmgckPath = path;
 		mStrImgmgckParams = params;
 	}
 	
@@ -92,7 +96,6 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrFileOut = strFilename;
 		
 		this.start();
-		Printing.info("Building...", 0);
 	}
 	
 	public String readLaTeXCodeFromFile(String strFilename) throws IOException{
@@ -133,17 +136,36 @@ public class LaTeXService extends Thread implements Runnable {
 		cmdarray[0] =  
 				"pdflatex -output-directory " + mStrDir
 				+ " " + mStrDir + File.separator + "standalone.tex";
-		cmdarray[1] = 
-				"convert " + mStrImgmgckParams
-				+ " -density " + mPngDensity + " -quality " + mPngQuality
-				+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
-		Printing.info(cmdarray[0], 1);
-		Printing.info(cmdarray[1], 1);
+		if (OsDetection.getOS() == OsDetection.OS_WIN){
+			cmdarray[1] = 
+					"\""+mStrImgmgckPath+"convert.exe\" " + mStrImgmgckParams
+					+ " -density " + mPngDensity + " -quality " + mPngQuality
+					+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
+		}
+		else {
+			cmdarray[1] = 
+					"convert " + mStrImgmgckParams
+					+ " -density " + mPngDensity + " -quality " + mPngQuality
+					+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
+		}
+		Printing.debug(cmdarray[0]);
+		Printing.info("Building...", 0);
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
 		try {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
-			if (!proc.waitFor(mWaitBuild, TimeUnit.SECONDS)){
+			BufferedReader in = new BufferedReader(
+                    new InputStreamReader(proc.getInputStream()));
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				// For some reason in Windows, while loop must be carried out even if isVerbose == false. 
+				// Otherwise building won't complete (process won't end).
+				// Linux is fine without it...I hate Windows...
+				if (Printing.isVerbose())
+					System.out.println(line);
+			}
+			boolean success = proc.waitFor(mWaitBuild, TimeUnit.SECONDS);
+			if (!success){
 				Printing.error("Waiting time of " + mWaitBuild +" seconds expired before building finished. Read log for more info.");
 				Printing.info("Build failed.", 0);
 			}
@@ -164,8 +186,15 @@ public class LaTeXService extends Thread implements Runnable {
 		String strExtension = mStrFileOut.substring(mStrFileOut.length()-3, mStrFileOut.length());
 		if(strExtension.equals("png")){
 			// --- Convert standalone.pdf to png
+			Printing.debug(cmdarray[1]);
 			try {
 				proc = Runtime.getRuntime().exec(cmdarray[1]);
+				BufferedReader in = new BufferedReader(
+	                    new InputStreamReader(proc.getErrorStream()));
+				String line = null;
+				while ((line = in.readLine()) != null) {
+					System.out.println(line);
+				}
 				int result = proc.waitFor();
 				if (result != 0)
 					Printing.error("Conversion to PNG failed. ImageMagick returned "+result+".");
@@ -186,7 +215,7 @@ public class LaTeXService extends Thread implements Runnable {
 		}
 		
 		if(mBoEmbed){
-			// --- Construct the latex code to include in the PNG image"Code"
+			// --- Construct the latex code to include in the PNG image
 	        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
 	        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
 	        Chunk authorChunk = builder.build();

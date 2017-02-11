@@ -12,7 +12,7 @@
 * GNU General Public License for more details.
 * 
 * You should have received a copy of the GNU General Public License
-* along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+* along with LaTeXbuilder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package LaTeXbuilder;
@@ -25,13 +25,14 @@ public class Printing {
 	/* Members */
 	
 	private static boolean mBoVerbose = false;
+	private static boolean mBoDebug = false;
 
 	
 	/* Methods */
 	
 	public static void error(String msg)
    	{
-		String strMessage = "ERROR: " + msg;
+		String strMessage = "[ERROR] " + msg;
 		System.out.println(strMessage);
 		GUI.printToLog(strMessage);
    	}
@@ -46,20 +47,29 @@ public class Printing {
 	*/
 	public static void info(String msg, int verbosity)
 	{
-		String strMessage = "INFO: " + msg;
+		String strMessage = "[INFO] " + msg;
 		if ((verbosity > 0) && mBoVerbose){
-			//TODO call 'print() in GUI class
-			//ServerGUI.print(stMessage);
 			System.out.println(strMessage);
 			GUI.printToLog(strMessage);
 		}
 		else if(verbosity == 0){
-			//TODO call 'print() in GUI class
-			//ServerGUI.print(stMessage);
 			System.out.println(strMessage);
 			GUI.printToLog(strMessage);
 		}
 	}
 	
+	public static void debug(String msg){
+		
+		String strMessage = "[DEBUG] " + msg;
+		if(mBoDebug){
+			System.out.println(strMessage);
+			GUI.printToLog(strMessage);
+		}
+	} 
+	
 	public static void setVerbosity(boolean boVerbose){ mBoVerbose = boVerbose; }
+	
+	public static void setDebug(boolean boDebug){ mBoDebug = boDebug; }
+	
+	public static boolean isVerbose(){ return mBoVerbose; }
 }
