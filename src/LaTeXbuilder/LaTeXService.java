@@ -89,13 +89,21 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrImgmgckParams = params;
 	}
 	
-	public void buildLaTeX(String strCode, String strFilename, boolean boEmbed){
+	public void buildLaTeXAsync(String strCode, String strFilename, boolean boEmbed){
 		
 		mBoEmbed = boEmbed;
 		mStrCode = strCode;
 		mStrFileOut = strFilename;
 		
 		this.start();
+	}
+	
+	public void buildLaTeX(String strCode, String strFilename, boolean boEmbed){
+		mBoEmbed = boEmbed;
+		mStrCode = strCode;
+		mStrFileOut = strFilename;
+		
+		this.run();
 	}
 	
 	public String readLaTeXCodeFromFile(String strFilename) throws IOException{
@@ -124,7 +132,7 @@ public class LaTeXService extends Thread implements Runnable {
 
 		// --- Load contents of latex preamble file
 		ArrayList<String> standaloneLines = 
-				ReadWrite.readFile(mStrDir + File.separator + mStrFilePream + ".tex");
+				ReadWrite.readFileLines(mStrDir + File.separator + mStrFilePream + ".tex");
 		standaloneLines.add(mStrCode);
 		standaloneLines.add("\\end{document}");
 		
