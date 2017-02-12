@@ -219,9 +219,6 @@ public class LaTeXbuilder {
 		    	path = path.substring(0, ix);
 		    }
 			path = new File(path).getAbsolutePath();
-			if (OsDetection.getOS() == OsDetection.OS_WIN){
-				path = path.substring(0, path.length()-2);
-			}
 		}
 		return path;
 	}
