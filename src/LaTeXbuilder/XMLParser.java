@@ -3,14 +3,13 @@ package LaTeXbuilder;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-//TODO Parser should be able to read tag that start and end in the same line
 public class XMLParser {
 	
 	
 	/* Members */
 	
-	public static final String STR_TAG_ITEM  = "latex";
-	public static final String STR_TAG_CODE  = "code";
+	public static final String STR_TAG_ITEM = "latex";
+	public static final String STR_TAG_CODE = "code";
 	public static final String STR_TAG_FILE = "file";
 	
 	
@@ -23,10 +22,7 @@ public class XMLParser {
 		ArrayList<String> items = new ArrayList<String>();
 		
 		boolean itemStart = false; 
-		int countLine = 0;
-		int countLineStart = 0;
 		while(scanner.hasNextLine()){
-			countLine++;
 			String strLine = scanner.nextLine();
 			if (itemStart && strLine.contains("</"+strLabel+">")){
 				itemStart = false;
@@ -38,7 +34,16 @@ public class XMLParser {
 			}
 			if (strLine.contains("<"+strLabel+">")){
 				itemStart = true;
-				countLineStart = countLine;
+			}
+			if (strLine.contains("<"+strLabel+">") && strLine.contains("</"+strLabel+">")){
+				// Filter out content between start & end tag
+				int iStart = strLine.lastIndexOf("<"+strLabel+">");
+				int iEnd = strLine.indexOf("</"+strLabel+">");
+				String strTagEnd = "</"+strLabel+">";
+				String strContent = strLine.substring(iStart+strTagEnd.length(), iEnd);
+				//Write content to buffer & array list
+				items.add(strContent);
+				itemStart = false;
 			}
 		}
 		scanner.close();
@@ -53,48 +58,20 @@ public class XMLParser {
 		
 		for(int i=0; i<strItems.size(); i++){
 			String curItem = strItems.get(i);
-			//TODO Change getContent to getItems such that one latex item can contain multiple code snippets
-			String strFilename = getContent(STR_TAG_FILE, curItem);
-			if (strFilename != null)
+			ArrayList<String> listFilename = getItems(STR_TAG_FILE, curItem);
+			String strFilename = null;
+			if (listFilename.size() != 0){
+				strFilename = listFilename.get(0).toString();
 				strFilename = strFilename.replaceAll("\n", "").trim();
-			else
-				strFilename = "code_"+i+".tex";
-			
-			String strCode = getContent(STR_TAG_CODE, curItem);
+			} else {
+				strFilename = "code_"+i+".pdf";
+			}
+			String strCode = getItems(STR_TAG_CODE, curItem).toString();
+			strCode = strCode.substring(1, strCode.length()-1);
 			itemsList.add(new LaTeXCodeItem(strFilename, strCode));
 		}
 		
 		return itemsList;
-	}
-	
-	public static String getContent(String strLabel, String strText){
-		
-		StringBuffer strBufContents = new StringBuffer();
-		Scanner scanner = new Scanner(strText);
-		
-		boolean itemStart = false;
-		boolean hasItem = false;
-		int countLine = 0;
-		while(scanner.hasNextLine()){
-			countLine++;
-			String strLine = scanner.nextLine();
-			if (itemStart && strLine.contains("</"+strLabel+">")){
-				itemStart = false;
-				hasItem = true;
-			}
-			if (itemStart){
-				strBufContents.append(strLine+"\n");
-			}
-			if (strLine.contains("<"+strLabel+">")){
-				itemStart = true;
-			}
-		}
-		scanner.close();
-		
-		if (hasItem)
-			return strBufContents.toString();
-		else
-			return null;
 	}
 
 }
