@@ -27,7 +27,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
 import com.icafe4j.image.png.Chunk;
 import com.icafe4j.image.png.ChunkType;
@@ -42,9 +41,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private String mStrCode;
 	private String mStrFileOut;
 	private boolean mBoEmbed 				= false;
-	private static int mWaitBuild 			= 10;
 	private static String mStrDir			= "latex";
-	private static String mStrFilePream 	= "standalone_pre";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
 	private static String mStrImgmgckPath   = " ";
@@ -70,16 +67,8 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrCode = code;
 	}
 	
-	public void setWaitBuild(int waitBuild){
-		mWaitBuild = waitBuild;
-	}
-	
 	public void setDir(String strDir){
 		mStrDir = strDir;
-	}
-	
-	public void setPreambleFile(String strFile){
-		mStrFilePream = strFile;
 	}
 	
 	public void setImagemagickParams(int intDensity, int intQuality, String path, String params){
@@ -123,19 +112,20 @@ public class LaTeXService extends Thread implements Runnable {
 		String mStrCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
 
 		// --- Load contents of latex preamble file
-		ArrayList<String> standaloneLines = 
-				ReadWrite.readFile(mStrDir + File.separator + mStrFilePream + ".tex");
-		standaloneLines.add(mStrCode);
-		standaloneLines.add("\\end{document}");
+		String strStandalone = getPreamble()
+				+"\n"
+				+mStrCode+"\n"
+				+"\\end{document}";
 		
 		// --- Write assembled contents to ascii file
-		ReadWrite.writeFile(standaloneLines, mStrDir + File.separator + "standalone.tex");
+		ReadWrite.writeFile(strStandalone, 
+				new File(mStrDir + File.separator + "standalone.tex"));
 		
 		// --- Concatenate code to provide to class Runtime
 		String[] cmdarray = new String[2];
 		cmdarray[0] =  
 				"pdflatex -output-directory " + mStrDir
-				+ " " + mStrDir + File.separator + "standalone.tex";
+				+ " -halt-on-error " + mStrDir + File.separator + "standalone.tex";
 		if (OsDetection.getOS() == OsDetection.OS_WIN){
 			cmdarray[1] = 
 					"\""+mStrImgmgckPath+"convert.exe\" " + mStrImgmgckParams
@@ -152,6 +142,7 @@ public class LaTeXService extends Thread implements Runnable {
 		Printing.info("Building...", 0);
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
+		int resultLatex = -1;
 		try {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
 			BufferedReader in = new BufferedReader(
@@ -164,18 +155,12 @@ public class LaTeXService extends Thread implements Runnable {
 				if (Printing.isVerbose())
 					System.out.println(line);
 			}
-			boolean success = proc.waitFor(mWaitBuild, TimeUnit.SECONDS);
-			if (!success){
-				Printing.error("Waiting time of " + mWaitBuild +" seconds expired before building finished. Read log for more info.");
-				Printing.info("Build failed.", 0);
+			resultLatex = proc.waitFor();
+			if (resultLatex != 0){
+				Printing.error("Build failed with return value "+resultLatex+". See log file for details.");
 			}
-			else {
-				int result = proc.exitValue();
-				if (result != 0)
-					Printing.info("Build failed. Return value: "+result+".", 0);
-				else{
-					Printing.info("Success!", 0);
-				}
+			else{
+				Printing.info("Success!", 0);
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -183,73 +168,75 @@ public class LaTeXService extends Thread implements Runnable {
 			e.printStackTrace();
 		}
 
-		String strExtension = mStrFileOut.substring(mStrFileOut.length()-3, mStrFileOut.length());
-		if(strExtension.equals("png")){
-			// --- Convert standalone.pdf to png
-			Printing.debug(cmdarray[1]);
-			try {
-				proc = Runtime.getRuntime().exec(cmdarray[1]);
-				BufferedReader in = new BufferedReader(
-	                    new InputStreamReader(proc.getErrorStream()));
-				String line = null;
-				while ((line = in.readLine()) != null) {
-					System.out.println(line);
+		if (resultLatex == 0){
+			String strExtension = mStrFileOut.substring(mStrFileOut.length()-3, mStrFileOut.length());
+			if(strExtension.equals("png")){
+				// --- Convert standalone.pdf to png
+				Printing.debug(cmdarray[1]);
+				try {
+					proc = Runtime.getRuntime().exec(cmdarray[1]);
+					BufferedReader in = new BufferedReader(
+		                    new InputStreamReader(proc.getErrorStream()));
+					String line = null;
+					while ((line = in.readLine()) != null) {
+						System.out.println(line);
+					}
+					int result = proc.waitFor();
+					if (result != 0)
+						Printing.error("Conversion to PNG failed. ImageMagick returned "+result+".");
+					else
+						Printing.info("Conversion to PNG successful.", 0);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-				int result = proc.waitFor();
-				if (result != 0)
-					Printing.error("Conversion to PNG failed. ImageMagick returned "+result+".");
-				else
-					Printing.info("Conversion to PNG successful.", 0);
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			} else if(strExtension.equals("pdf")) {
+				// --- Just rename standalone.pdf to desired filename and move to new location
+				File fileStandalone = new File(mStrDir+File.separator+"standalone.pdf");
+				fileStandalone.renameTo(new File(mStrFileOut));
+			} else {
+				Printing.error("Extension "+strExtension+" unknown.");
 			}
-		} else if(strExtension.equals("pdf")) {
-			// --- Just rename standalone.pdf to desired filename and move to new location
-			File fileStandalone = new File(mStrDir+File.separator+"standalone.pdf");
-			fileStandalone.renameTo(new File(mStrFileOut));
-		} else {
-			Printing.error("Extension "+strExtension+" unknown.");
-		}
+			
+			if(mBoEmbed){
+				// --- Construct the latex code to include in the PNG image
+		        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
+		        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
+		        Chunk authorChunk = builder.build();
+		        builder.keyword("Software").text("LaTeXbuilder");
+		        Chunk softwareChunk = builder.build();
+		        builder.keyword(STR_CODE_KEYWORD).text(mStrCodeInsert);
+		        Chunk codeChunk = builder.build();
 		
-		if(mBoEmbed){
-			// --- Construct the latex code to include in the PNG image
-	        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
-	        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
-	        Chunk authorChunk = builder.build();
-	        builder.keyword("Software").text("LaTeXbuilder");
-	        Chunk softwareChunk = builder.build();
-	        builder.keyword(STR_CODE_KEYWORD).text(mStrCodeInsert);
-	        Chunk codeChunk = builder.build();
-	
-	        ArrayList<Chunk> chunks = new ArrayList<Chunk>();
-	        chunks.add(authorChunk);
-	        chunks.add(softwareChunk);
-	        chunks.add(codeChunk);
- 
-	        FileInputStream fi;
-	        FileOutputStream fo;
-			try {
-				fi = new FileInputStream(mStrFileOut);
-				String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png";
-				fo = new FileOutputStream(strFileOutTmp);
-				
-				PNGTweaker.insertChunks(chunks, fi, fo);
-	
-		        fi.close();
-		        fo.close();
-		        
-		        File fileOutTemp = new File(strFileOutTmp);
-		        File fileOut = new File(mStrFileOut);
-		        fileOut.delete();
-		        fileOutTemp.renameTo(new File(mStrFileOut));
-	
-			} catch (FileNotFoundException e) {
-				Printing.error(mStrFileOut+" could not be found.");
-			} catch (IOException e) {
-				e.printStackTrace();
+		        ArrayList<Chunk> chunks = new ArrayList<Chunk>();
+		        chunks.add(authorChunk);
+		        chunks.add(softwareChunk);
+		        chunks.add(codeChunk);
+	 
+		        FileInputStream fi;
+		        FileOutputStream fo;
+				try {
+					fi = new FileInputStream(mStrFileOut);
+					String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png";
+					fo = new FileOutputStream(strFileOutTmp);
+					
+					PNGTweaker.insertChunks(chunks, fi, fo);
+		
+			        fi.close();
+			        fo.close();
+			        
+			        File fileOutTemp = new File(strFileOutTmp);
+			        File fileOut = new File(mStrFileOut);
+			        fileOut.delete();
+			        fileOutTemp.renameTo(new File(mStrFileOut));
+		
+				} catch (FileNotFoundException e) {
+					Printing.error(mStrFileOut+" could not be found.");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}

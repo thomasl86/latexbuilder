@@ -82,12 +82,15 @@ public class ReadWrite {
 		return boSuccess;
 	}
 	
-	public static boolean writeFile(String content, String filename){
+	public static boolean writeFile(String content, File file){
 
 		boolean boSuccess = false;
 		BufferedWriter bw;
 		try {
-			File file = new File(filename);
+			File path = new File(file.getParent());
+			if (!path.exists()){
+				path.mkdirs();
+			}
 			FileWriter fw = new FileWriter(file);
 			bw = new BufferedWriter(fw);
 			bw.write(content);

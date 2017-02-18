@@ -148,9 +148,7 @@ public class LaTeXbuilder {
 				if (temp != null) GUI.setWorkingDir(temp);
 			}
 			if (mConfig != null){
-				int waitBuild = mConfig.get("build", "wait", int.class);
 				mStrDirLaTeX = mConfig.get("build", "latexDir", String.class);
-				String strFile = mConfig.get("build", "latexPreFile", String.class);
 				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
 				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
 				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
@@ -160,9 +158,7 @@ public class LaTeXbuilder {
 				}
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
-				laTeXService.setWaitBuild(waitBuild);
 				laTeXService.setDir(mStrDirApp+File.separator+mStrDirLaTeX);
-				laTeXService.setPreambleFile(strFile);
 			}
 		}		
 
@@ -192,7 +188,7 @@ public class LaTeXbuilder {
 					try {
 						strCode = laTeXService.readLaTeXCodeFromFile(mStrFileRead);
 						if (strCode != null){
-							ReadWrite.writeFile(strCode, mStrDirLaTeX + mStrFileCode);
+							ReadWrite.writeFile(strCode, new File(mStrDirLaTeX + mStrFileCode));
 						}
 					} catch (IOException e) {
 						Printing.error("Could not read file (IOException)");
