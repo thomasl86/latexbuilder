@@ -51,21 +51,24 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 	/* Members */
 	
 	private static final long serialVersionUID = 1L;
-	private JLabel mLabelWrite;
-	private JTextField mTxtFileWrite;
-	private JTextArea mTxtCode;
-	private JButton mBtnBuild;
-	private static String mStrDirWorking = null;
-	private final String LABEL_BTN_BUILD = "Build";
-	private final String LABEL_BTN_OPEN = "Open..."; 
-	private final String LABEL_BTN_WRITE = "...";
-	private JMenuBar menuBar;
-	private JMenu mnFile;
-	private JMenuItem mntmOpen;
+	private static String mStrDirWorking 	= null;
 	private static JTextArea mTxtAreaLog;
-	private File mFileIn;
-	private File mFileOut;
-	private JCheckBox mChckbxEmbed;
+	private final String LABEL_BTN_BUILD 	= "Build";
+	private final String LABEL_BTN_OPEN 	= "Open..."; 
+	private final String LABEL_BTN_PREAMBLE = "Preamble file...";
+	private final String LABEL_BTN_WRITE 	= "...";
+	private File 		mFileIn;
+	private File 		mFileOut;
+	private File 		mFilePreamble;
+	private JLabel 		mLabelWrite;
+	private JTextField 	mTxtFileWrite;
+	private JTextArea 	mTxtCode;
+	private JButton 	mBtnBuild;
+	private JMenuBar 	menuBar;
+	private JMenu 		mnFile;
+	private JMenuItem 	mntmOpen;
+	private JCheckBox 	mChckbxEmbed;
+	private JMenuItem 	mntmPreamble;
 	
 	
 	/* Constructors */
@@ -164,6 +167,10 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 		mntmOpen = new JMenuItem(LABEL_BTN_OPEN);
 		mntmOpen.addActionListener(this);
 		mnFile.add(mntmOpen);
+		
+		mntmPreamble = new JMenuItem(LABEL_BTN_PREAMBLE);
+		mntmPreamble.addActionListener(this);
+		mnFile.add(mntmPreamble);
 	}
 
 	
@@ -212,10 +219,19 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 					String strFilename = mFileIn.getName();
 					int idx = mFileIn.getAbsolutePath().indexOf(strFilename);
 					String strDir = mFileIn.getAbsolutePath().substring(0,idx);
-					LaTeXbuilder.putConfigArg("build", "workingdir", strDir);
+					LaTeXbuilder.putConfigArg("backup", "workingdir", strDir);
 				} catch (IOException e) {
 					Printing.error("Could not read file (IOException).");
 				}
+			}
+		}
+		else if (command.equals(LABEL_BTN_PREAMBLE)){
+			JFileChooser fileChooser = new JFileChooser();
+			int returnVal = fileChooser.showOpenDialog(this);
+			if (returnVal == JFileChooser.APPROVE_OPTION){
+				mFilePreamble = fileChooser.getSelectedFile();
+				LaTeXbuilder.putConfigArg("build", "latexPreFile", mFilePreamble.getAbsolutePath());
+				LaTeXService.setPreambleFile(mFilePreamble.getAbsolutePath());
 			}
 		}
 		else if (command.equals(LABEL_BTN_WRITE)){
@@ -251,7 +267,6 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 
 	@Override
 	public void windowOpened(WindowEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -267,25 +282,21 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 
 	@Override
 	public void windowIconified(WindowEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowDeiconified(WindowEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowActivated(WindowEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowDeactivated(WindowEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 }

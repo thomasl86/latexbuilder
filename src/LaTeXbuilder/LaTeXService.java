@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -42,6 +43,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private String mStrFileOut;
 	private boolean mBoEmbed 				= false;
 	private static String mStrDir			= "latex";
+	private static String mStrFilePream 	= "";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
 	private static String mStrImgmgckPath   = " ";
@@ -69,6 +71,10 @@ public class LaTeXService extends Thread implements Runnable {
 	
 	public void setDir(String strDir){
 		mStrDir = strDir;
+	}
+	
+	public static void setPreambleFile(String strFile){
+		mStrFilePream = strFile;
 	}
 	
 	public void setImagemagickParams(int intDensity, int intQuality, String path, String params){
@@ -110,12 +116,23 @@ public class LaTeXService extends Thread implements Runnable {
 	public void run() {
 		
 		String mStrCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
-
+		
 		// --- Load contents of latex preamble file
-		String strStandalone = getPreamble()
-				+"\n"
-				+mStrCode+"\n"
-				+"\\end{document}";
+		String strPreambleExt = 
+				ReadWrite.readFile(
+						mStrFilePream, 
+						Charset.defaultCharset());
+		if (strPreambleExt == null){
+			Printing.error("Preamble file \'"+mStrFilePream+"\' loading failed (IOException).");
+			strPreambleExt = "";
+		}
+		// --- Construct the standalone.tex file provided to pdflatex
+		String strStandalone = 
+				getPreamble() + "\n" 
+				+ strPreambleExt 
+				+ "\\begin{document}\n"
+				+ mStrCode+"\n"
+				+ "\\end{document}";
 		
 		// --- Write assembled contents to ascii file
 		ReadWrite.writeFile(strStandalone, 
@@ -143,6 +160,7 @@ public class LaTeXService extends Thread implements Runnable {
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
 		int resultLatex = -1;
+		//TODO Automatically create latex folder before build and delete after build
 		try {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
 			BufferedReader in = new BufferedReader(
@@ -187,10 +205,11 @@ public class LaTeXService extends Thread implements Runnable {
 					else
 						Printing.info("Conversion to PNG successful.", 0);
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					Printing.error("Conversion to PNG failed (IOException).");
+					//e1.printStackTrace();
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					Printing.error("Conversion to PNG failed (InterruptedException).");
+					//e.printStackTrace();
 				}
 			} else if(strExtension.equals("pdf")) {
 				// --- Just rename standalone.pdf to desired filename and move to new location
@@ -242,57 +261,39 @@ public class LaTeXService extends Thread implements Runnable {
 	}
 	
 	private String getPreamble(){
-		return "\\documentclass[%"
-		+ "varwidth,"
-		+ "\nfloat=true,"
-		+ "\nclass=article,"
-		+ "\npreview=false,"
-		+ "\ncrop=true,"
-		+ "\n10 pt,"
-		+ "\nborder=5pt"
-		+ "\n]{standalone}"
-		+ "\n"
-		+ "\n\\usepackage{tikz}"
-		+ "\n\\usepackage{scalefnt}"
-		+ "\n\\usepackage{transparent}"
-		+ "\n\\usepackage{times} % assumes new font selection scheme installed"
-		+ "\n\\usepackage[T1]{fontenc}"
-		+ "\n\\usepackage{amsmath} % assumes amsmath package installed"
-		+ "\n\\usepackage{amssymb}  % assumes amsmath package installed"
-		+ "\n\\usepackage{mathtools}"
-		+ "\n\\usepackage{mathptmx} % assumes new font selection scheme installed"
-		+ "\n\\usepackage{import}"
-		+ "\n\\usepackage{epstopdf}"
-		+ "\n\\usepackage{pgfplots}"
-		+ "\n\\pgfplotsset{compat=newest}"
-		+ "\n%\\pgfplotsset{plot coordinates/math parser=true}"
-		+ "\n\\newlength\\figureheight"
-		+ "\n\\newlength\\figurewidth"
-		+ "\n\\usepackage{paralist}"
-		+ "\n\\usepackage{booktabs}"
-		+ "\n\\usepackage{multirow}"
-		+ "\n\\usepackage{sansmath}"
-		+ "\n\\usetikzlibrary{positioning}"
-		+ "\n\\usepackage{graphicx}"
-		+ "\n% --- For sans serif fonts"
-		+ "\n%\\usepackage[default,osfigures,scale=0.95]{opensans}"
-		+ "\n% Alternatively use the option 'defaultsans' instead of 'default' to replace the"
-		+ "\n% sans serif font only."
-		+ "\n%\\renewcommand{\\familydefault}{\\sfdefault}"
-		+ "\n%\\tikzset{every picture/.style={font=\\sffamily}}"
-		+ "\n%\\pgfplotsset{"
-		+ "\n%	every axis label/.append style={font=\\sffamily},"
-		+ "\n%	tick label style={font=\\sffamily}"
-		+ "\n%}"
-		+ "\n\\newlength{\\mycolumnwidth}%"
-		+ "\n\\newlength{\\mytextwidth}%"
-		+ "\n"
-		+ "\n\\setlength{\\mycolumnwidth}{8.85553cm} % columnwidth in IEEE Tran class"
-		+ "\n\\setlength{\\mytextwidth}{14cm}%18.13275"
-		+ "\n\\setlength\\figurewidth{.41\\mytextwidth}%"
-		+ "\n\\setlength\\figureheight{.25\\mytextwidth}%"
-		+ "\n% --- Put % after every single line!!!"
-		+ "\n\\begin{document}%";
-
+		String preamble = 
+				"\\documentclass[%"
+				+ "varwidth,"
+				+ "\nfloat=true,"
+				+ "\nclass=article,"
+				+ "\npreview=false,"
+				+ "\ncrop=true,"
+				+ "\n10 pt,"
+				+ "\nborder=5pt"
+				+ "\n]{standalone}"
+				+ "\n"
+				+ "\n\\usepackage{tikz}"
+				+ "\n\\usepackage{scalefnt}"
+				+ "\n\\usepackage{transparent}"
+				+ "\n\\usepackage{times} % assumes new font selection scheme installed"
+				+ "\n\\usepackage[T1]{fontenc}"
+				+ "\n\\usepackage{amsmath} % assumes amsmath package installed"
+				+ "\n\\usepackage{amssymb}  % assumes amsmath package installed"
+				+ "\n\\usepackage{mathtools}"
+				+ "\n\\usepackage{mathptmx} % assumes new font selection scheme installed"
+				+ "\n\\usepackage{import}"
+				+ "\n\\usepackage{epstopdf}"
+				+ "\n\\usepackage{pgfplots}"
+				+ "\n\\pgfplotsset{compat=newest}"
+				+ "\n%\\pgfplotsset{plot coordinates/math parser=true}"
+				+ "\n\\newlength\\figureheight"
+				+ "\n\\newlength\\figurewidth"
+				+ "\n\\usepackage{paralist}"
+				+ "\n\\usepackage{booktabs}"
+				+ "\n\\usepackage{multirow}"
+				+ "\n\\usepackage{sansmath}"
+				+ "\n\\usetikzlibrary{positioning}"
+				+ "\n\\usepackage{graphicx}";
+		return preamble;
 	}
 }

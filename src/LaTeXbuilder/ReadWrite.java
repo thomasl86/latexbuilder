@@ -30,8 +30,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class ReadWrite {
-
-	//TODO add a method for serialization
 	
 	public static ArrayList<String> readFile(String strFile){
 		
@@ -55,9 +53,15 @@ public class ReadWrite {
 	    return lines;
 	}
 	
-	public static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
+	public static String readFile(String path, Charset encoding){
+		
+		byte[] encoded;
+		try {
+			encoded = Files.readAllBytes(Paths.get(path));
+			return new String(encoded, encoding);
+		} catch (IOException e) {
+			return null;
+		}
 	}
 	
 	public static boolean writeFile(ArrayList<String> lines, String filename){

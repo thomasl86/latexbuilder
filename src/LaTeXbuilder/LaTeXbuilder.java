@@ -36,16 +36,16 @@ public class LaTeXbuilder {
 	
 	/* Members */
 	
-	private static String mStrFileCode 	 = "code.tex";
-	private static String mStrDirLaTeX 	 = ".."+File.separator+"latex";
-	private static String mStrFileOut	 = "out.png";
-	private static String mStrFileRead 	 = null;
-	private static String mStrDirWorking = null;
-	private static String mStrDirApp 	 = null;
-	private static boolean mIsDebug 	 = false;
-	private static boolean mDoEmbedCode	 = false;
-	static Wini mConfig 		 		 = null;
-	static Wini mConfigStore 		 	 = null;
+	private static String mStrFileCode 	 		= "code.tex";
+	private static String mStrDirLaTeX 	 		= ".."+File.separator+"latex";
+	private static String mStrFileOut	 		= "out.png";
+	private static String mStrFileRead 	 		= null;
+	private static String mStrDirWorking 		= null;
+	private static String mStrDirApp 	 		= null;
+	private static boolean mIsDebug 	 		= false;
+	private static boolean mDoEmbedCode	 		= false;
+	private static Wini mConfig 		 		= null;
+	private static final String STR_CONFIG_NAME = "config.ini";
 
 	
 	/* Methods */
@@ -128,27 +128,18 @@ public class LaTeXbuilder {
 		
 		if(doReadConfig){			
 			try {
-				mConfig = new Wini(new File(mStrDirApp+File.separator+"config.ini"));
+				mConfig = new Wini(new File(mStrDirApp+File.separator+STR_CONFIG_NAME));
 				Printing.info("Config file reading successful.", 1);
 			} catch (IOException e1) {
 				Printing.error("Could not read config file (IOException).");
 				Printing.info("Using standard parameters.", 0);
 				Printing.info("Path: "+mStrDirApp, 0);
 			}
-			File fileCfgStore = new File(mStrDirApp+File.separator+"config_store.inf");
-			try {
-				fileCfgStore.createNewFile();
-				mConfigStore = new Wini(fileCfgStore);
-			} catch (IOException e) {
-				Printing.error("Could not create file 'config_store.inf' (IOException).");
-				e.printStackTrace();
-			}
-			if (mConfigStore != null) {
-				String temp = mConfigStore.get("build", "workingdir", String.class);
-				if (temp != null) GUI.setWorkingDir(temp);
-			}
 			if (mConfig != null){
+				String temp = mConfig.get("backup", "workingdir", String.class);
+				if (temp != null) GUI.setWorkingDir(temp);
 				mStrDirLaTeX = mConfig.get("build", "latexDir", String.class);
+				String strFilePream = mConfig.get("build", "latexPreFile", String.class);
 				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
 				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
 				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
@@ -159,6 +150,7 @@ public class LaTeXbuilder {
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
 				laTeXService.setDir(mStrDirApp+File.separator+mStrDirLaTeX);
+				LaTeXService.setPreambleFile(strFilePream);
 			}
 		}		
 
@@ -173,12 +165,13 @@ public class LaTeXbuilder {
 			} else {
 				if(doBuild){
 					// --- Get contents from code.tex
-					String strCode;
-					try {
-						strCode = ReadWrite.readFile(mStrDirWorking+File.separator+mStrFileCode, Charset.defaultCharset());
+					String strCode = ReadWrite.readFile(
+							mStrDirWorking+File.separator+mStrFileCode, 
+							Charset.defaultCharset());
+					if (strCode != null)
 						laTeXService.buildLaTeX(
 								strCode, mStrDirWorking+File.separator+mStrFileOut, mDoEmbedCode);
-					} catch (IOException e) {
+					else {
 						Printing.error("Could not read file "+mStrDirWorking+File.separator+mStrFileCode+" (IOException)");
 					}
 				}
@@ -220,10 +213,11 @@ public class LaTeXbuilder {
 	}
 	
 	public static void putConfigArg(String section, String option, Object value){
-		if (mConfigStore != null){
-			mConfigStore.put(section, option, value);
+		if (mConfig != null){
+			mConfig.put(section, option, value);
 			try {
-				mConfigStore.store();
+				mConfig.store();
+				Printing.debug("Stored value \'"+value+"\' in \'"+STR_CONFIG_NAME+"\'.");
 			} catch (IOException e) {
 				Printing.error("Could not write to config file (IOException)");
 			}
