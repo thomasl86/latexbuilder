@@ -60,4 +60,4 @@ config_store.inf
 miglayout*
 LaTeXbuilder.xml
 LaTeXbuilder_build.sh
-latex/preamble.tex
+test_preamble.tex

@@ -37,7 +37,7 @@ public class LaTeXbuilder {
 	/* Members */
 	
 	private static String mStrFileCode 	 		= "code.tex";
-	private static String mStrDirLaTeX 	 		= ".."+File.separator+"latex";
+	private static String mStrDirLaTeX 	 		= null;
 	private static String mStrFileOut	 		= "out.png";
 	private static String mStrFileRead 	 		= null;
 	private static String mStrDirWorking 		= null;
@@ -116,8 +116,10 @@ public class LaTeXbuilder {
 		//Path to the executable
 		if (mIsDebug){
 			mStrDirApp = mStrDirWorking;
+			mStrDirLaTeX = ".."+File.separator+"latex";
 		} else {
 			mStrDirApp = getPath(LaTeXbuilder.class);
+			mStrDirLaTeX = mStrDirApp+File.separator+"latex";
 		}
 		Printing.debug("App dir: "+mStrDirApp);
 		Printing.debug("Working dir: "+mStrDirWorking);
@@ -138,8 +140,7 @@ public class LaTeXbuilder {
 			if (mConfig != null){
 				String temp = mConfig.get("backup", "workingdir", String.class);
 				if (temp != null) GUI.setWorkingDir(temp);
-				mStrDirLaTeX = mConfig.get("build", "latexDir", String.class);
-				String strFilePream = mConfig.get("build", "latexPreFile", String.class);
+				String strFilePream = mConfig.get("build", "latexPreambleFile", String.class);
 				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
 				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
 				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
@@ -149,7 +150,7 @@ public class LaTeXbuilder {
 				}
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
-				laTeXService.setDir(mStrDirApp+File.separator+mStrDirLaTeX);
+				laTeXService.setDir(mStrDirLaTeX);
 				LaTeXService.setPreambleFile(strFilePream);
 			}
 		}		

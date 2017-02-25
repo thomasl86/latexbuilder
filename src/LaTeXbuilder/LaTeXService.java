@@ -42,7 +42,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private String mStrCode;
 	private String mStrFileOut;
 	private boolean mBoEmbed 				= false;
-	private static String mStrDir			= "latex";
+	private static String mStrDir			= null;
 	private static String mStrFilePream 	= "";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
@@ -160,7 +160,6 @@ public class LaTeXService extends Thread implements Runnable {
 		Process proc;
 		// --- Build latex source 'standalone.tex' using pdflatex
 		int resultLatex = -1;
-		//TODO Automatically create latex folder before build and delete after build
 		try {
 			proc = Runtime.getRuntime().exec(cmdarray[0]);
 			BufferedReader in = new BufferedReader(
