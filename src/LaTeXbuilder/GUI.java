@@ -230,7 +230,7 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 			int returnVal = fileChooser.showOpenDialog(this);
 			if (returnVal == JFileChooser.APPROVE_OPTION){
 				mFilePreamble = fileChooser.getSelectedFile();
-				LaTeXbuilder.putConfigArg("build", "latexPreFile", mFilePreamble.getAbsolutePath());
+				LaTeXbuilder.putConfigArg("build", "latexPreambleFile", mFilePreamble.getAbsolutePath());
 				LaTeXService.setPreambleFile(mFilePreamble.getAbsolutePath());
 			}
 		}
