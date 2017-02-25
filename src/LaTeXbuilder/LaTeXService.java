@@ -209,7 +209,6 @@ public class LaTeXService extends Thread implements Runnable {
 				else
 					Printing.info("Conversion to PNG successful.", 0);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} catch (InterruptedException e) {
 				e.printStackTrace();

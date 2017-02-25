@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class XMLParser {
 	
-	
+	//TODO add capability to deal with comment symbols for different languages (detect via file extension)
 	/* Members */
 	
 	public static final String STR_TAG_ITEM = "latex";
