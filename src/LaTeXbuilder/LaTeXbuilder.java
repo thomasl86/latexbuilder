@@ -21,6 +21,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 import static java.util.Arrays.*;
+import java.util.ArrayList;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,23 +62,33 @@ public class LaTeXbuilder {
 		 */
 		// Setup command line parser
 		OptionParser parser = new OptionParser();
-		parser.acceptsAll(asList("r","read"), "Read code embedded in PNG file.")
+		parser.acceptsAll(asList("r","read"), 
+				"Read code embedded in PNG file.")
 				.withRequiredArg();
-		parser.acceptsAll(
-				asList("b", "build"), 
+		parser.acceptsAll(asList("b", "build"), 
 				"Build latex code. ["+File.separator+"dir"+File.separator+"source.tex]")
 				.withRequiredArg();
-		parser.acceptsAll(asList("o", "output"), "Output file ["+File.separator+"dir"+File.separator+"file.ext]").withRequiredArg();
-		parser.acceptsAll(asList("v", "verbose"), "Be more chatty." );
-		parser.acceptsAll(asList("d", "debug"), "Enable printing of debug information." );
-		parser.acceptsAll(asList("?", "h", "help"), "Show help and exit." );
-		parser.acceptsAll(asList("e", "embed"), "Embed the latex source code in output file.");
+		parser.acceptsAll(asList("o", "output"), 
+				"Output file ["+File.separator+"dir"+File.separator+"file.ext]")
+				.withRequiredArg();
+		parser.acceptsAll(asList("v", "verbose"), 
+				"Be more chatty." );
+		parser.acceptsAll(asList("d", "debug"), 
+				"Enable printing of debug information." );
+		parser.acceptsAll(asList("?", "h", "help"), 
+				"Show help and exit." );
+		parser.acceptsAll(asList("e", "embed"), 
+				"Embed the latex source code in output file.");
+		parser.acceptsAll(asList("s", "scan"), 
+				"Scans an ASCII file for latex code enclosed in the appropriate XML tags and builds the code.")
+				.withRequiredArg();
 		
 		// --- Parse command line arguments
 		OptionSet optionSet = parser.parse( args );
 		boolean hasCmdArgs = optionSet.hasOptions();
 		boolean doReadFile = false;
 		boolean doBuild = false;
+		boolean doScan = false;
 		boolean doPrintHelp = false;
 		boolean doReadConfig = true;
 		if (hasCmdArgs){
@@ -99,8 +110,11 @@ public class LaTeXbuilder {
 			}
 			if (optionSet.has("b") || optionSet.has("build")){
 				doBuild = true;
-				
 				mStrFileCode = (String) optionSet.valueOf("b");
+			}
+			if(optionSet.has("s") || optionSet.has("scan")){
+				doScan = true;
+				mStrFileCode = (String) optionSet.valueOf("s");
 			}
 			// Print the help and exit.
 			if (optionSet.has("?") || optionSet.has("h") || optionSet.has("help")){
@@ -176,7 +190,18 @@ public class LaTeXbuilder {
 						Printing.error("Could not read file "+mStrDirWorking+File.separator+mStrFileCode+" (IOException)");
 					}
 				}
-				
+				else if(doScan){
+					//TODO Print better information
+					String strCode = ReadWrite.readFile(mStrDirWorking+File.separator+mStrFileCode);
+					ArrayList<LaTeXCodeItem> itemsList = XMLParser.getItems(strCode);
+					for(int i=0; i<itemsList.size(); i++){
+						laTeXService.buildLaTeX(
+								itemsList.get(i).code, 
+								mStrDirWorking+File.separator+itemsList.get(i).label, 
+								mDoEmbedCode);
+					}
+					
+				}
 				else if(doReadFile){
 					String strCode = null;
 					try {

@@ -31,7 +31,28 @@ import java.util.ArrayList;
 
 public class ReadWrite {
 	
-	public static ArrayList<String> readFile(String strFile){
+	public static String readFile(String strFile){
+		BufferedReader br;
+		String strContent = null;
+	    try {
+	        br = new BufferedReader(new FileReader(strFile));
+	        try {
+	            String x;
+	            while ( (x = br.readLine()) != null ) {
+            		strContent = strContent +"\n"+x;
+	            }
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    } catch (FileNotFoundException e) {
+	        System.out.println(e);
+	        e.printStackTrace();
+	    }
+	    
+	    return strContent;
+	}
+	
+	public static ArrayList<String> readFileLines(String strFile){
 		
 		BufferedReader br;
 		ArrayList<String> lines = new ArrayList<String>();

@@ -198,7 +198,7 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 			}
 
 			LaTeXService latexService = new LaTeXService();
-			latexService.buildLaTeX(strCode, strFileOut, mChckbxEmbed.isSelected());
+			latexService.buildLaTeXAsync(strCode, strFileOut, mChckbxEmbed.isSelected());
 			
 		}
 		else if (command.equals(LABEL_BTN_OPEN)){

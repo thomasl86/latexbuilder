@@ -84,13 +84,21 @@ public class LaTeXService extends Thread implements Runnable {
 		mStrImgmgckParams = params;
 	}
 	
-	public void buildLaTeX(String strCode, String strFilename, boolean boEmbed){
+	public void buildLaTeXAsync(String strCode, String strFilename, boolean boEmbed){
 		
 		mBoEmbed = boEmbed;
 		mStrCode = strCode;
 		mStrFileOut = strFilename;
 		
 		this.start();
+	}
+	
+	public void buildLaTeX(String strCode, String strFilename, boolean boEmbed){
+		mBoEmbed = boEmbed;
+		mStrCode = strCode;
+		mStrFileOut = strFilename;
+		
+		this.run();
 	}
 	
 	public String readLaTeXCodeFromFile(String strFilename) throws IOException{
