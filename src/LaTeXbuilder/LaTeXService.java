@@ -126,12 +126,15 @@ public class LaTeXService extends Thread implements Runnable {
 		String mStrCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
 		
 		// --- Load contents of latex preamble file
-		String strPreambleExt = 
-				ReadWrite.readFile(
-						mStrFilePream, 
-						Charset.defaultCharset());
+		String strPreambleExt = null;
+		if (mStrFilePream != null){
+			strPreambleExt = 
+					ReadWrite.readFile(
+							mStrFilePream, 
+							Charset.defaultCharset());
+		}
 		if (strPreambleExt == null){
-			Printing.error("Preamble file \'"+mStrFilePream+"\' loading failed (IOException).");
+			Printing.error("Preamble file \'"+mStrFilePream+"\' loading failed.");
 			strPreambleExt = "";
 		}
 		// --- Construct the standalone.tex file provided to pdflatex
