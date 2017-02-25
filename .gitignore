@@ -51,12 +51,12 @@ local.properties
 
 # Project specific
 /images/
+/latex/
 *.aux
 *.log
 *.pdf
 standalone.tex
 code.tex
-/code/
 config_store.inf
 miglayout*
 LaTeXbuilder.xml
