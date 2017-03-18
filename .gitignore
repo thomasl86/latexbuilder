@@ -54,11 +54,9 @@ local.properties
 /latex/
 *.aux
 *.log
-*.pdf
 standalone.tex
 code.tex
 config_store.inf
+backup.ini
 miglayout*
-LaTeXbuilder.xml
-LaTeXbuilder_build.sh
 test_preamble.tex

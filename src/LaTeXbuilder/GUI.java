@@ -69,6 +69,7 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 	private JMenuItem 	mntmOpen;
 	private JCheckBox 	mChckbxEmbed;
 	private JMenuItem 	mntmPreamble;
+	private JTextField  mTxtBorder;
 	
 	
 	/* Constructors */
@@ -89,6 +90,11 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 		mTxtFileWrite.setEditable(true);
 		mTxtFileWrite.setVisible(true);
 		
+		mTxtBorder = new JTextField();
+		mTxtBorder.setColumns(10);
+		mTxtBorder.setEditable(true);
+		mTxtBorder.setVisible(true);
+		
 		mBtnBuild = new JButton(LABEL_BTN_BUILD);
 		mBtnBuild.addActionListener(this);
 		mBtnBuild.setVisible(true);
@@ -102,37 +108,42 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 		mChckbxEmbed = new JCheckBox("embed code", true);
 		
 		mTxtAreaLog = new JTextArea();
+		
+		JLabel lblBorder = new JLabel("Border:");
 		GroupLayout groupLayout = new GroupLayout(getContentPane());
 		groupLayout.setHorizontalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGap(6)
-							.addComponent(mTxtCode, GroupLayout.DEFAULT_SIZE, 354, Short.MAX_VALUE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
-							.addComponent(mTxtAreaLog, GroupLayout.DEFAULT_SIZE, 348, Short.MAX_VALUE))
+							.addComponent(mTxtCode, GroupLayout.DEFAULT_SIZE, 360, Short.MAX_VALUE))
 						.addGroup(groupLayout.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 								.addComponent(mChckbxEmbed)
 								.addGroup(groupLayout.createSequentialGroup()
 									.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+										.addComponent(mLabelWrite)
 										.addGroup(groupLayout.createSequentialGroup()
-											.addComponent(mTxtFileWrite, GroupLayout.PREFERRED_SIZE, 182, GroupLayout.PREFERRED_SIZE)
+											.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+												.addGroup(groupLayout.createSequentialGroup()
+													.addComponent(lblBorder)
+													.addPreferredGap(ComponentPlacement.RELATED)
+													.addComponent(mTxtBorder, GroupLayout.PREFERRED_SIZE, 62, GroupLayout.PREFERRED_SIZE))
+												.addComponent(mTxtFileWrite, GroupLayout.PREFERRED_SIZE, 182, GroupLayout.PREFERRED_SIZE))
 											.addPreferredGap(ComponentPlacement.UNRELATED)
-											.addComponent(btnBrowseBuild, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE))
-										.addComponent(mLabelWrite))
+											.addComponent(btnBrowseBuild, GroupLayout.PREFERRED_SIZE, 37, GroupLayout.PREFERRED_SIZE)))
 									.addGap(18)
-									.addComponent(mBtnBuild, GroupLayout.PREFERRED_SIZE, 84, GroupLayout.PREFERRED_SIZE))))
+									.addComponent(mBtnBuild, GroupLayout.PREFERRED_SIZE, 84, GroupLayout.PREFERRED_SIZE))
+								.addComponent(lblLog)))
 						.addGroup(groupLayout.createSequentialGroup()
 							.addContainerGap()
-							.addComponent(lblLog)))
+							.addComponent(mTxtAreaLog, GroupLayout.PREFERRED_SIZE, 342, GroupLayout.PREFERRED_SIZE)))
 					.addContainerGap())
 		);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.TRAILING)
+			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
 					.addGap(6)
 					.addComponent(mTxtCode, GroupLayout.PREFERRED_SIZE, 173, GroupLayout.PREFERRED_SIZE)
@@ -146,15 +157,19 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 						.addComponent(mBtnBuild, GroupLayout.PREFERRED_SIZE, 62, GroupLayout.PREFERRED_SIZE))
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(mChckbxEmbed)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblBorder)
+						.addComponent(mTxtBorder, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addGap(11)
 					.addComponent(lblLog)
-					.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(mTxtAreaLog, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addGap(261))
+					.addContainerGap(15, Short.MAX_VALUE))
 		);
 		getContentPane().setLayout(groupLayout);
 
-		setSize(372, 384);
+		setSize(378, 414);
 		
 		addWindowListener(this);
 		
@@ -188,19 +203,29 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 	@Override
 	public void actionPerformed(ActionEvent event) {
 		String command = event.getActionCommand();
+		/*
+		 * 'Build' button clicked
+		 */
 		if (command.equals(LABEL_BTN_BUILD)){
 
 			// --- Get contents from the code text field
 			String strCode = mTxtCode.getText();
+			//TODO Check whether file with directory is given or only file
 			String strFileOut = mTxtFileWrite.getText();
 			if (strFileOut.equals("")){
-				strFileOut = mFileIn.getAbsolutePath(); 
+				strFileOut = mFileIn.getAbsolutePath();
 			}
+			String strBorder = mTxtBorder.getText();
 
 			LaTeXService latexService = new LaTeXService();
+			LaTeXService.setLaTeXBuildParams(strBorder);
+			LaTeXbuilder.putIniArg("build", "border", strBorder, 0);
 			latexService.buildLaTeXAsync(strCode, strFileOut, mChckbxEmbed.isSelected());
 			
 		}
+		/*
+		 * 'Open...' menu item clicked
+		 */
 		else if (command.equals(LABEL_BTN_OPEN)){
 			JFileChooser fileChooser = new JFileChooser();
 			if (mStrDirWorking != null){
@@ -219,21 +244,27 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 					String strFilename = mFileIn.getName();
 					int idx = mFileIn.getAbsolutePath().indexOf(strFilename);
 					String strDir = mFileIn.getAbsolutePath().substring(0,idx);
-					LaTeXbuilder.putConfigArg("backup", "workingdir", strDir);
+					LaTeXbuilder.putIniArg("gui", "workingdir", strDir, 1);
 				} catch (IOException e) {
 					Printing.error("Could not read file (IOException).");
 				}
 			}
 		}
+		/*
+		 * 'Preamble...' menu item clicked
+		 */
 		else if (command.equals(LABEL_BTN_PREAMBLE)){
 			JFileChooser fileChooser = new JFileChooser();
 			int returnVal = fileChooser.showOpenDialog(this);
 			if (returnVal == JFileChooser.APPROVE_OPTION){
 				mFilePreamble = fileChooser.getSelectedFile();
-				LaTeXbuilder.putConfigArg("build", "latexPreambleFile", mFilePreamble.getAbsolutePath());
+				LaTeXbuilder.putIniArg("build", "latexPreambleFile", mFilePreamble.getAbsolutePath(), 0);
 				LaTeXService.setPreambleFile(mFilePreamble.getAbsolutePath());
 			}
 		}
+		/*
+		 * '...' button for write directory choice clicked
+		 */
 		else if (command.equals(LABEL_BTN_WRITE)){
 			JFileChooser fileChooser = new JFileChooser();
 			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);

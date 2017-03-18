@@ -44,6 +44,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private boolean mBoEmbed 				= false;
 	private static String mStrDir			= null;
 	private static String mStrFilePream 	= "";
+	private static String mStrBorder        = "0pt";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
 	private static String mStrImgmgckPath   = " ";
@@ -82,6 +83,10 @@ public class LaTeXService extends Thread implements Runnable {
 		mPngQuality = intQuality;
 		mStrImgmgckPath = path;
 		mStrImgmgckParams = params;
+	}
+	
+	public static void setLaTeXBuildParams(String strBorder){
+		mStrBorder = strBorder;
 	}
 	
 	public void buildLaTeXAsync(String strCode, String strFilename, boolean boEmbed){
@@ -211,6 +216,7 @@ public class LaTeXService extends Thread implements Runnable {
 					}
 					int result = proc.waitFor();
 					if (result != 0)
+						//TODO If path to convert is not given, let the user know 
 						Printing.error("Conversion to PNG failed. ImageMagick returned "+result+".");
 					else
 						Printing.info("Conversion to PNG successful.", 0);
@@ -269,7 +275,7 @@ public class LaTeXService extends Thread implements Runnable {
 			}
 		}
 	}
-	
+	//TODO Add possibility to choose parameters such as font size, font
 	private String getPreamble(){
 		String preamble = 
 				"\\documentclass[%"
@@ -279,7 +285,7 @@ public class LaTeXService extends Thread implements Runnable {
 				+ "\npreview=false,"
 				+ "\ncrop=true,"
 				+ "\n10 pt,"
-				+ "\nborder=5pt"
+				+ "\nborder="+mStrBorder
 				+ "\n]{standalone}"
 				+ "\n"
 				+ "\n\\usepackage{tikz}"

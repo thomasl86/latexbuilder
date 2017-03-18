@@ -21,6 +21,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 import static java.util.Arrays.*;
+
 import java.util.ArrayList;
 
 import java.io.File;
@@ -45,8 +46,10 @@ public class LaTeXbuilder {
 	private static String mStrDirApp 	 		= null;
 	private static boolean mIsDebug 	 		= false;
 	private static boolean mDoEmbedCode	 		= false;
-	private static Wini mConfig 		 		= null;
+	private static Wini mIniConfig 		 		= null;
+	private static Wini mIniBackup 		 	    = null;
 	private static final String STR_CONFIG_NAME = "config.ini";
+	private static final String STR_BCKP_NAME   = "backup.ini";
 
 	
 	/* Methods */
@@ -61,6 +64,7 @@ public class LaTeXbuilder {
 		 * Parse command line options array
 		 */
 		// Setup command line parser
+		//TODO Add possibility to type in simple formula directly into command line
 		OptionParser parser = new OptionParser();
 		parser.acceptsAll(asList("r","read"), 
 				"Read code embedded in PNG file.")
@@ -80,17 +84,19 @@ public class LaTeXbuilder {
 		parser.acceptsAll(asList("e", "embed"), 
 				"Embed the latex source code in output file.");
 		parser.acceptsAll(asList("s", "scan"), 
-				"Scans an ASCII file for latex code enclosed in the appropriate XML tags and builds the code.")
+				"[Experimental] Scans an ASCII file for latex code enclosed in the appropriate XML tags and builds the code.")
 				.withRequiredArg();
+		parser.accepts("open-config", "Opens the config file with the standard editor and exits.");
 		
 		// --- Parse command line arguments
-		OptionSet optionSet = parser.parse( args );
-		boolean hasCmdArgs = optionSet.hasOptions();
-		boolean doReadFile = false;
-		boolean doBuild = false;
-		boolean doScan = false;
-		boolean doPrintHelp = false;
+		OptionSet optionSet  = parser.parse( args );
+		boolean hasCmdArgs   = optionSet.hasOptions();
+		boolean doReadFile   = false;
+		boolean doBuild      = false;
+		boolean doScan       = false;
+		boolean doPrintHelp  = false;
 		boolean doReadConfig = true;
+		boolean doOpenConfig = false;
 		if (hasCmdArgs){
 			if (optionSet.has("v") || optionSet.has("verbose"))
 				Printing.setVerbosity(true);
@@ -121,6 +127,9 @@ public class LaTeXbuilder {
 				doPrintHelp = true;
 				doReadConfig = false;
 			}
+			if (optionSet.has("open-config")){
+				doOpenConfig = true;
+			}
 			else{
 			}
 		}
@@ -144,28 +153,40 @@ public class LaTeXbuilder {
 		
 		if(doReadConfig){			
 			try {
-				mConfig = new Wini(new File(mStrDirApp+File.separator+STR_CONFIG_NAME));
+				mIniConfig = new Wini(new File(mStrDirApp+File.separator+STR_CONFIG_NAME));
 				Printing.info("Config file reading successful.", 1);
 			} catch (IOException e1) {
 				Printing.error("Could not read config file (IOException).");
 				Printing.info("Using standard parameters.", 0);
 				Printing.info("Path: "+mStrDirApp, 0);
 			}
-			if (mConfig != null){
-				String temp = mConfig.get("backup", "workingdir", String.class);
+			File fileCfgStore = new File(mStrDirApp+File.separator+STR_BCKP_NAME);
+			try {
+				fileCfgStore.createNewFile();
+				mIniBackup = new Wini(fileCfgStore);
+			} catch (IOException e) {
+				Printing.error("Could not create file 'config_store.inf' (IOException).");
+				e.printStackTrace();
+			}
+			if (mIniBackup != null) {
+				String temp = mIniBackup.get("gui", "workingdir", String.class);
 				if (temp != null) GUI.setWorkingDir(temp);
-				String strFilePream = mConfig.get("build", "latexPreambleFile", String.class);
-				int intPngQuality = mConfig.get("imagemagick", "quality", int.class);
-				int intPngDensity = mConfig.get("imagemagick", "density", int.class);
-				String strImgmgckParams = mConfig.get("imagemagick", "params", String.class);
+			}
+			if (mIniConfig != null){ 
+				String strFilePream = mIniConfig.get("build", "latexPreambleFile", String.class);
+				String strBorder = mIniConfig.get("build", "border");
+				int intPngQuality = mIniConfig.get("imagemagick", "quality", int.class);
+				int intPngDensity = mIniConfig.get("imagemagick", "density", int.class);
+				String strImgmgckParams = mIniConfig.get("imagemagick", "params", String.class); 
 				String strImgmgckPath = null;
 				if(OsDetection.getOS() == OsDetection.OS_WIN){
-					strImgmgckPath = mConfig.get("imagemagick", "path", String.class);
+					strImgmgckPath = mIniConfig.get("imagemagick", "path", String.class);
 				}
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
 				laTeXService.setDir(mStrDirLaTeX);
 				LaTeXService.setPreambleFile(strFilePream);
+				LaTeXService.setLaTeXBuildParams(strBorder);
 			}
 		}		
 
@@ -192,6 +213,7 @@ public class LaTeXbuilder {
 				}
 				else if(doScan){
 					//TODO Print better information
+					//TODO add capability to only extract latex code but not build it (e.g. for inclusion in paper)
 					String strCode = ReadWrite.readFile(mStrDirWorking+File.separator+mStrFileCode);
 					ArrayList<LaTeXCodeItem> itemsList = XMLParser.getItems(strCode);
 					for(int i=0; i<itemsList.size(); i++){
@@ -203,6 +225,7 @@ public class LaTeXbuilder {
 					
 				}
 				else if(doReadFile){
+					//TODO Read the file, create *.tex file in same folder and open an editor in same folder
 					String strCode = null;
 					try {
 						strCode = laTeXService.readLaTeXCodeFromFile(mStrFileRead);
@@ -211,6 +234,25 @@ public class LaTeXbuilder {
 						}
 					} catch (IOException e) {
 						Printing.error("Could not read file (IOException)");
+					}
+				}
+				else if (doOpenConfig){
+					if (mIniConfig != null) {
+						try {
+							String strCmd = null;
+							if (OsDetection.getOS() == OsDetection.OS_NIX)
+								strCmd = "xdg-open "+mStrDirApp+File.separator+STR_CONFIG_NAME;
+							else if (OsDetection.getOS() == OsDetection.OS_WIN)
+								strCmd = "start "+mStrDirApp+File.separator+STR_CONFIG_NAME;
+							if (strCmd != null){
+								Runtime.getRuntime().exec(strCmd);	
+							}
+						} catch (IOException e) {
+							Printing.error("Could not open confg file (IOException).");
+						}
+					}
+					else {
+						Printing.error("Could not open config file (not available?).");
 					}
 				}
 			}
@@ -238,14 +280,34 @@ public class LaTeXbuilder {
 		return path;
 	}
 	
-	public static void putConfigArg(String section, String option, Object value){
-		if (mConfig != null){
-			mConfig.put(section, option, value);
+	/**
+	 * Saves the given value Object to the given option, which lives in the given section.
+	 * @param section The section name in the INI file in which the option lives.
+	 * @param option The option name in the INI file.
+	 * @param value The value to store.
+	 * @param switchFile Two possible values: 0 for writing to the config file and 1 for writing to the backup file.
+	 */
+	public static void putIniArg(String section, String option, Object value, int switchFile){
+		Wini ini = null;
+		switch (switchFile) {
+		case 0:
+			ini = mIniConfig;
+			break;
+		case 1:
+			ini = mIniBackup;
+		default:
+			Printing.debug(
+					"In putBackupArg(): Invalid value "
+					+switchFile+" for parameter \'switchFile\'.");
+			break;
+		}
+		if (ini != null){
+			ini.put(section, option, value);
 			try {
-				mConfig.store();
-				Printing.debug("Stored value \'"+value+"\' in \'"+STR_CONFIG_NAME+"\'.");
+				ini.store();
+				Printing.debug("Stored value \'"+value+"\' in \'"+STR_BCKP_NAME+"\'.");
 			} catch (IOException e) {
-				Printing.error("Could not write to config file (IOException)");
+				Printing.error("Could not write to backup file \'"+STR_BCKP_NAME+"\' (IOException).");
 			}
 		}
 	}
