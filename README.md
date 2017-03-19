@@ -5,7 +5,7 @@ LaTeXbuilder facilitates the compilation of latex source code into PDF or PNG fi
 **Features (to be extended):**
 
 - Builds a PDF or PNG from given LaTeX source code, e.g. a simple formula such as `$e^{i\pi} + 1 = 0$`
-- Embeds the LaTeX source code within the created PNG or PDF meaning that the source code is stored within the output files themselves. Allows for convenient re-loading and modification of the output files.
+- Embeds the LaTeX source code within the created PNG or PDF meaning that the source code is stored within the output files themselves. Allows for convenient re-loading and modification of the output files with LaTeXbuilder.
 - Builds figures created with `tikzpicture` and/or `pgfplots`
 - (*Experimental*) Parses latex code from within ASCII encoded files that contain other arbitrary characters besides LaTeX source code (e.g., source file written in some other programming language)
 
