@@ -239,12 +239,17 @@ public class GUI extends JFrame implements ActionListener, WindowListener {
 				LaTeXService laTeXService = new LaTeXService();
 				try {
 					strCode = laTeXService.readLaTeXCodeFromFile(mFileIn.getAbsolutePath());
-					mTxtCode.setText(strCode);
-					mTxtFileWrite.setText(mFileIn.getAbsolutePath());
-					String strFilename = mFileIn.getName();
-					int idx = mFileIn.getAbsolutePath().indexOf(strFilename);
-					String strDir = mFileIn.getAbsolutePath().substring(0,idx);
-					LaTeXbuilder.putIniArg("gui", "workingdir", strDir, 1);
+					if (strCode == null){
+						Printing.error("No LaTeX code found in the file.");
+					}
+					else{
+						mTxtCode.setText(strCode);
+						mTxtFileWrite.setText(mFileIn.getAbsolutePath());
+						String strFilename = mFileIn.getName();
+						int idx = mFileIn.getAbsolutePath().indexOf(strFilename);
+						String strDir = mFileIn.getAbsolutePath().substring(0,idx);
+						LaTeXbuilder.putIniArg("gui", "workingdir", strDir, 1);
+					}
 				} catch (IOException e) {
 					Printing.error("Could not read file (IOException).");
 				}

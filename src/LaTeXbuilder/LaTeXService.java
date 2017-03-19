@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -33,6 +34,9 @@ import com.icafe4j.image.png.Chunk;
 import com.icafe4j.image.png.ChunkType;
 import com.icafe4j.image.png.PNGTweaker;
 import com.icafe4j.image.png.TextBuilder;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfStamper;
 
 public class LaTeXService extends Thread implements Runnable {
 
@@ -108,27 +112,34 @@ public class LaTeXService extends Thread implements Runnable {
 	
 	public String readLaTeXCodeFromFile(String strFilename) throws IOException{
 		String strCode = null;
-		String strChunks = null;
+		String strExt = strFilename.substring(strFilename.length()-3);
 
-		strChunks = PNGTweaker.readTextChunks(strFilename);
-		Scanner sc = new Scanner(strChunks);
-		try{
-		sc.useDelimiter(STR_DELIMITER);
-		sc.next();
-		strCode = sc.next();
+		if (strExt.equals("png")){
+			String strChunks = PNGTweaker.readTextChunks(strFilename);
+			
+			Scanner sc = new Scanner(strChunks);
+			try{
+				sc.useDelimiter(STR_DELIMITER);
+				sc.next();
+				strCode = sc.next();
+			}
+			catch(NoSuchElementException e){
+				strCode = null;
+			}
+			sc.close();
 		}
-		catch(NoSuchElementException e){
-			Printing.error("No LaTeX code found in image file.");
+		else if (strExt.equals("pdf")){
+			PdfReader pdfReader = new PdfReader(strFilename);
+			HashMap<String, String> mapChunks = pdfReader.getInfo();
+			strCode = mapChunks.get(STR_CODE_KEYWORD);
+			pdfReader.close();
 		}
-		sc.close();
 		
 		return strCode;
 	}
 	
 	@Override
 	public void run() {
-		
-		String mStrCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
 		
 		// --- Load contents of latex preamble file
 		String strPreambleExt = null;
@@ -236,41 +247,70 @@ public class LaTeXService extends Thread implements Runnable {
 			}
 			
 			if(mBoEmbed){
-				// --- Construct the latex code to include in the PNG image
-		        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
-		        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
-		        Chunk authorChunk = builder.build();
-		        builder.keyword("Software").text("LaTeXbuilder");
-		        Chunk softwareChunk = builder.build();
-		        builder.keyword(STR_CODE_KEYWORD).text(mStrCodeInsert);
-		        Chunk codeChunk = builder.build();
-		
-		        ArrayList<Chunk> chunks = new ArrayList<Chunk>();
-		        chunks.add(authorChunk);
-		        chunks.add(softwareChunk);
-		        chunks.add(codeChunk);
-	 
-		        FileInputStream fi;
-		        FileOutputStream fo;
-				try {
-					fi = new FileInputStream(mStrFileOut);
-					String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png";
-					fo = new FileOutputStream(strFileOutTmp);
-					
-					PNGTweaker.insertChunks(chunks, fi, fo);
-		
-			        fi.close();
-			        fo.close();
-			        
-			        File fileOutTemp = new File(strFileOutTmp);
-			        File fileOut = new File(mStrFileOut);
-			        fileOut.delete();
-			        fileOutTemp.renameTo(new File(mStrFileOut));
-		
-				} catch (FileNotFoundException e) {
-					Printing.error(mStrFileOut+" could not be found.");
-				} catch (IOException e) {
-					e.printStackTrace();
+				if (strExtension.equals("png")){
+					// --- Construct the latex code to include in the PNG image
+			        TextBuilder builder = new TextBuilder(ChunkType.ITXT)
+			        		.keyword("Author").text("https://github.com/thomasl86/latexbuilder");
+			        Chunk authorChunk = builder.build();
+			        builder.keyword("Software").text("LaTeXbuilder");
+			        Chunk softwareChunk = builder.build();
+					String strCodeInsert = STR_DELIMITER + mStrCode + STR_DELIMITER;
+			        builder.keyword(STR_CODE_KEYWORD).text(strCodeInsert);
+			        Chunk codeChunk = builder.build();
+			
+			        ArrayList<Chunk> chunks = new ArrayList<Chunk>();
+			        chunks.add(authorChunk);
+			        chunks.add(softwareChunk);
+			        chunks.add(codeChunk);
+		 
+			        FileInputStream fi;
+			        FileOutputStream fo;
+					try {
+						fi = new FileInputStream(mStrFileOut);
+						String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.png";
+						fo = new FileOutputStream(strFileOutTmp);
+						
+						PNGTweaker.insertChunks(chunks, fi, fo);
+			
+				        fi.close();
+				        fo.close();
+				        
+				        File fileOutTemp = new File(strFileOutTmp);
+				        File fileOut = new File(mStrFileOut);
+				        fileOut.delete();
+				        fileOutTemp.renameTo(new File(mStrFileOut));
+			
+					} catch (FileNotFoundException e) {
+						Printing.error(mStrFileOut+" could not be found.");
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				else if (strExtension.equals("pdf")){
+					String strFileOutTmp = mStrFileOut.substring(0, mStrFileOut.length()-4)+"_e.pdf";
+					try {
+						FileOutputStream outStream = new FileOutputStream(new File(strFileOutTmp));
+						
+						PdfReader pdfReader = new PdfReader(mStrFileOut);
+						PdfStamper pdfStamper = new PdfStamper(pdfReader, outStream);
+						final HashMap<String, String> info = new HashMap<>();
+						info.put(STR_CODE_KEYWORD, mStrCode);
+						pdfStamper.setMoreInfo(info);
+						pdfStamper.flush();
+						pdfStamper.close();
+						
+						outStream.close();
+				        
+				        File fileOutTemp = new File(strFileOutTmp);
+				        File fileOut = new File(mStrFileOut);
+				        fileOut.delete();
+				        fileOutTemp.renameTo(new File(mStrFileOut));
+				        
+					} catch (IOException e) {
+						Printing.error("Could not read file \'"+new File(mStrFileOut).getName()+"\' (IOException).");
+					} catch (DocumentException e) {
+						Printing.error("Could not read file \'"+new File(mStrFileOut).getName()+"\' (DocumentException).");
+					}
 				}
 			}
 		}
