@@ -48,7 +48,7 @@ public class LaTeXService extends Thread implements Runnable {
 	private boolean mBoEmbed 				= false;
 	private static String mStrDir			= null;
 	private static String mStrFilePream 	= "";
-	private static String mStrBorder        = "0pt";
+	private static String mStrBorder        = "0";
 	private static int mPngDensity 			= 500;
 	private static int mPngQuality 			= 100;
 	private static String mStrImgmgckPath   = " ";
@@ -150,7 +150,7 @@ public class LaTeXService extends Thread implements Runnable {
 							Charset.defaultCharset());
 		}
 		if (strPreambleExt == null){
-			Printing.error("Preamble file \'"+mStrFilePream+"\' loading failed.");
+			Printing.info("No custom preamble file loaded.", 0);
 			strPreambleExt = "";
 		}
 		// --- Construct the standalone.tex file provided to pdflatex
@@ -158,7 +158,9 @@ public class LaTeXService extends Thread implements Runnable {
 				getPreamble() + "\n" 
 				+ strPreambleExt 
 				+ "\\begin{document}\n"
+				+ "\\begin{preview}\n"
 				+ mStrCode+"\n"
+				+ "\\end{preview}\n"
 				+ "\\end{document}";
 		
 		// --- Write assembled contents to ascii file
@@ -166,7 +168,7 @@ public class LaTeXService extends Thread implements Runnable {
 				new File(mStrDir + File.separator + "standalone.tex"));
 		
 		// --- Concatenate code to provide to class Runtime
-		String[] cmdarray = new String[2];
+		String[] cmdarray = new String[3];
 		cmdarray[0] =  
 				"pdflatex -output-directory " + mStrDir
 				+ " -halt-on-error " + mStrDir + File.separator + "standalone.tex";
@@ -182,6 +184,7 @@ public class LaTeXService extends Thread implements Runnable {
 					+ " -density " + mPngDensity + " -quality " + mPngQuality
 					+ " "+mStrDir+File.separator+"standalone.pdf "+mStrFileOut;
 		}
+		cmdarray[2] = "pdfcrop "+mStrDir+File.separator+"standalone.pdf --margins "+mStrBorder;
 		Printing.debug(cmdarray[0]);
 		Printing.info("Building...", 0);
 		Process proc;
@@ -205,6 +208,14 @@ public class LaTeXService extends Thread implements Runnable {
 			}
 			else{
 				Printing.info("Success!", 0);
+				Printing.info("Cropping PDF...", 0);
+				Printing.debug("Command: "+cmdarray[2]);
+				proc = Runtime.getRuntime().exec(cmdarray[2]);
+				proc.waitFor();
+				Printing.info("Done!",0);
+		        new File(mStrDir+File.separator+"standalone.pdf").delete();
+		        new File(mStrDir+File.separator+"standalone-crop.pdf")
+		        	.renameTo(new File(mStrDir+File.separator+"standalone.pdf"));
 			}
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -318,15 +329,9 @@ public class LaTeXService extends Thread implements Runnable {
 	//TODO Add possibility to choose parameters such as font size, font
 	private String getPreamble(){
 		String preamble = 
-				"\\documentclass[%"
-				+ "varwidth,"
-				+ "\nfloat=true,"
-				+ "\nclass=article,"
-				+ "\npreview=false,"
-				+ "\ncrop=true,"
-				+ "\n10 pt,"
-				+ "\nborder="+mStrBorder
-				+ "\n]{standalone}"
+				"\\documentclass{article}"
+				+ "\n"
+				+ "\\usepackage[active, tightpage]{preview}"
 				+ "\n"
 				+ "\n\\usepackage{tikz}"
 				+ "\n\\usepackage{scalefnt}"
@@ -349,7 +354,9 @@ public class LaTeXService extends Thread implements Runnable {
 				+ "\n\\usepackage{multirow}"
 				+ "\n\\usepackage{sansmath}"
 				+ "\n\\usetikzlibrary{positioning}"
-				+ "\n\\usepackage{graphicx}";
+				+ "\n\\usepackage{graphicx}"
+				+ "\n\\usepackage{algorithm}"
+				+ "\n\\usepackage{algpseudocode}";
 		return preamble;
 	}
 }
