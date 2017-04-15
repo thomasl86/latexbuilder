@@ -139,7 +139,7 @@ public class LaTeXbuilder {
 		//Path to the executable
 		if (mIsDebug){
 			mStrDirApp = mStrDirWorking;
-			mStrDirLaTeX = ".."+File.separator+"latex";
+			mStrDirLaTeX = "latex";
 		} else {
 			mStrDirApp = getPath(LaTeXbuilder.class);
 			mStrDirLaTeX = mStrDirApp+File.separator+"latex";

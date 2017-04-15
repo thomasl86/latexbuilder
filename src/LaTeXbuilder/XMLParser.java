@@ -37,7 +37,8 @@ public class XMLParser {
 			}
 			if (strLine.contains("<"+strLabel+">") && strLine.contains("</"+strLabel+">")){
 				// Filter out content between start & end tag
-				int iStart = strLine.lastIndexOf("<"+strLabel+">");
+				strLine = strLine.trim();
+				int iStart = strLine.lastIndexOf("<"+strLabel+">")-1;
 				int iEnd = strLine.indexOf("</"+strLabel+">");
 				String strTagEnd = "</"+strLabel+">";
 				String strContent = strLine.substring(iStart+strTagEnd.length(), iEnd);
@@ -64,7 +65,7 @@ public class XMLParser {
 				strFilename = listFilename.get(0).toString();
 				strFilename = strFilename.replaceAll("\n", "").trim();
 			} else {
-				strFilename = "code_"+i+".pdf";
+				strFilename = "item_"+i+".pdf";
 			}
 			String strCode = getItems(STR_TAG_CODE, curItem).toString();
 			strCode = strCode.substring(1, strCode.length()-1);
