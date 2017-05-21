@@ -44,6 +44,7 @@ public class LaTeXbuilder {
 	private static String mStrFileRead 	 		= null;
 	private static String mStrDirWorking 		= null;
 	private static String mStrDirApp 	 		= null;
+	private static String mStrFilePream			= null;
 	private static boolean mIsDebug 	 		= false;
 	private static boolean mDoEmbedCode	 		= false;
 	private static Wini mIniConfig 		 		= null;
@@ -87,16 +88,19 @@ public class LaTeXbuilder {
 				"[Experimental] Scans an ASCII file for latex code enclosed in the appropriate XML tags and builds the code.")
 				.withRequiredArg();
 		parser.accepts("open-config", "Opens the config file with the standard editor and exits.");
+		parser.accepts("latex-preamble", "The preamble file (including path).")
+				.withRequiredArg();
 		
 		// --- Parse command line arguments
-		OptionSet optionSet  = parser.parse( args );
-		boolean hasCmdArgs   = optionSet.hasOptions();
-		boolean doReadFile   = false;
-		boolean doBuild      = false;
-		boolean doScan       = false;
-		boolean doPrintHelp  = false;
-		boolean doReadConfig = true;
-		boolean doOpenConfig = false;
+		OptionSet optionSet   = parser.parse( args );
+		boolean hasCmdArgs    = optionSet.hasOptions();
+		boolean doReadFile    = false;
+		boolean doBuild       = false;
+		boolean doScan        = false;
+		boolean doPrintHelp   = false;
+		boolean doReadConfig  = true;
+		boolean doOpenConfig  = false;
+		boolean hasLaTeXPream = false;
 		if (hasCmdArgs){
 			if (optionSet.has("v") || optionSet.has("verbose"))
 				Printing.setVerbosity(true);
@@ -129,6 +133,10 @@ public class LaTeXbuilder {
 			}
 			if (optionSet.has("open-config")){
 				doOpenConfig = true;
+			}
+			if(optionSet.has("latex-preamble")){
+				hasLaTeXPream = true;
+				mStrFilePream = (String) optionSet.valueOf("latex-preamble");
 			}
 			else{
 			}
@@ -172,8 +180,10 @@ public class LaTeXbuilder {
 				String temp = mIniBackup.get("gui", "workingdir", String.class);
 				if (temp != null) GUI.setWorkingDir(temp);
 			}
-			if (mIniConfig != null){ 
-				String strFilePream = mIniConfig.get("build", "latexPreambleFile", String.class);
+			if (mIniConfig != null){
+				if(!hasLaTeXPream){
+					mStrFilePream = mIniConfig.get("build", "latexPreambleFile", String.class);
+				}
 				String strBorder = mIniConfig.get("build", "border");
 				int intPngQuality = mIniConfig.get("imagemagick", "quality", int.class);
 				int intPngDensity = mIniConfig.get("imagemagick", "density", int.class);
@@ -185,7 +195,6 @@ public class LaTeXbuilder {
 				laTeXService.setImagemagickParams(intPngDensity, intPngQuality, strImgmgckPath, strImgmgckParams);
 	
 				laTeXService.setDir(mStrDirLaTeX);
-				LaTeXService.setPreambleFile(strFilePream);
 				LaTeXService.setLaTeXBuildParams(strBorder);
 			}
 		}		
@@ -201,6 +210,7 @@ public class LaTeXbuilder {
 			} else {
 				if(doBuild){
 					// --- Get contents from code.tex
+					LaTeXService.setPreambleFile(mStrFilePream);
 					String strCode = ReadWrite.readFile(
 							mStrDirWorking+File.separator+mStrFileCode, 
 							Charset.defaultCharset());
