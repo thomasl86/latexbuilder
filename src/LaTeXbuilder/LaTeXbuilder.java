@@ -33,7 +33,14 @@ import java.nio.charset.Charset;
 
 import org.ini4j.Wini;
 
-public class LaTeXbuilder {
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+//TODO Try to move everything related to Application class to GUI class
+public class LaTeXbuilder extends Application {
 	
 	
 	/* Members */
@@ -57,6 +64,7 @@ public class LaTeXbuilder {
 	
 	public static void main(String[] args) {
 		
+		//TODO Figure out why program is not ending during command line execution
 		// When program is run in eclipse, only do so in debug mode
 		mIsDebug = ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0;
@@ -266,9 +274,9 @@ public class LaTeXbuilder {
 					}
 				}
 			}
-		} else {
-			// --- No command line arguments given
-			new GUI().setVisible(true);
+		} else { // --- No command line arguments given
+			
+			launch(args);
 		}
 	}
 	
@@ -320,5 +328,26 @@ public class LaTeXbuilder {
 				Printing.error("Could not write to backup file \'"+STR_BCKP_NAME+"\' (IOException).");
 			}
 		}
+	}
+	
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+		
+		GUI.setStage(primaryStage);
+		
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("main.fxml"));
+		Parent root = loader.load();
+		//Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
+		Scene scene = new Scene(root);
+		
+		// Adding the title to the window (primaryStage)
+		primaryStage.setTitle("LaTeXbuilder");
+		primaryStage.setScene(scene);
+		
+		GUI gui = loader.<GUI>getController();
+		Printing.init(gui);
+		
+		// Show the window(primaryStage)
+		primaryStage.show();
 	}
 }

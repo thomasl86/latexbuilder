@@ -52,6 +52,7 @@ local.properties
 # Project specific
 /images/
 */latex/*
+latex/*
 *.aux
 *.log
 standalone.tex

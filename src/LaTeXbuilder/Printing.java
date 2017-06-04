@@ -26,15 +26,22 @@ public class Printing {
 	
 	private static boolean mBoVerbose = false;
 	private static boolean mBoDebug = false;
+	private static GUI	   mGui;
+	private static String  mStrLineSep = "\n";
 
 	
 	/* Methods */
+	
+	public static void init(GUI gui){
+		mGui = gui;
+	}
 	
 	public static void error(String msg)
    	{
 		String strMessage = "[ERROR] " + msg;
 		System.out.println(strMessage);
-		GUI.printToLog(strMessage);
+		if(mGui!=null)
+			mGui.printToLog(strMessage + mStrLineSep);
    	}
 	
 
@@ -47,14 +54,18 @@ public class Printing {
 	*/
 	public static void info(String msg, int verbosity)
 	{
-		String strMessage = "[INFO] " + msg;
+		String strMessage = "[INFO ] " + msg;
 		if ((verbosity > 0) && mBoVerbose){
 			System.out.println(strMessage);
-			GUI.printToLog(strMessage);
+			if(mGui!=null)
+				mGui.printToLog(strMessage + mStrLineSep);
 		}
 		else if(verbosity == 0){
 			System.out.println(strMessage);
-			GUI.printToLog(strMessage);
+			if(mGui!=null){
+				String dbg = strMessage + mStrLineSep;
+				mGui.printToLog(dbg);
+			}
 		}
 	}
 	
@@ -63,7 +74,8 @@ public class Printing {
 		String strMessage = "[DEBUG] " + msg;
 		if(mBoDebug){
 			System.out.println(strMessage);
-			GUI.printToLog(strMessage);
+			if(mGui!=null)
+				mGui.printToLog(strMessage + mStrLineSep);
 		}
 	} 
 	
