@@ -20,8 +20,12 @@ package LaTeXbuilder;
 import java.io.File;
 import java.io.IOException;
 
+import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.MenuBar;
@@ -34,7 +38,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 
 
-public class GUI {
+public class GUI extends Application {
 
 	//TODO Make the file separator dynamic (e.g., / or \) again
 	/* Members */
@@ -167,5 +171,32 @@ public class GUI {
 		else if (eventObject.equals(mMenuItemClose)){
 			System.exit(0);
 		}
+	}
+	
+	@Override
+	public void start(Stage primaryStage) throws Exception {
+		
+		GUI.setStage(primaryStage);
+		
+		FXMLLoader loader = new FXMLLoader(getClass().getResource("main.fxml"));
+		Parent root = loader.load();
+		//Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
+		Scene scene = new Scene(root);
+		
+		// Adding the title to the window (primaryStage)
+		primaryStage.setTitle("LaTeXbuilder");
+		primaryStage.setScene(scene);
+		
+		GUI gui = loader.<GUI>getController();
+		Printing.init(gui);
+		
+		// Show the window(primaryStage)
+		primaryStage.show();
+	}
+	
+	@Override
+	public void stop() throws Exception {
+		super.stop();
+		System.exit(0);
 	}
 }
